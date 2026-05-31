@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RepOn - Login Inteligência Comercial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Specific page overlay for blur & high tech feel */
+        body.login-wrapper {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background: url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Dark backdrop blur overlay to focus the card and blur background */
+        body.login-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(4, 8, 20, 0.75);
+            backdrop-filter: blur(20px); /* Enhanced blur to make login card pop */
+            z-index: 1;
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 440px;
+            padding: 20px;
+        }
+
+        .login-card-premium {
+            background: rgba(10, 20, 38, 0.7);
+            border: 1px solid rgba(0, 168, 255, 0.25);
+            box-shadow: 0 0 30px rgba(0, 168, 255, 0.15), inset 0 0 15px rgba(0, 168, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px 35px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .login-card-premium:hover {
+            border-color: rgba(0, 168, 255, 0.4);
+            box-shadow: 0 0 40px rgba(0, 168, 255, 0.25), inset 0 0 20px rgba(0, 168, 255, 0.1);
+        }
+
+        .login-brand {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .login-brand .logo-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #2b1bfb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px auto;
+            box-shadow: 0 0 20px rgba(43, 27, 251, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .login-brand .logo-circle img {
+            width: 45px;
+            height: auto;
+        }
+
+        .login-brand h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin: 0;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+
+        .login-brand h1 span {
+            color: #ff3b30;
+        }
+
+        .login-brand p {
+            color: #8f9cae;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 5px 0 0 0;
+            font-weight: 600;
+        }
+
+        .premium-form-group {
+            margin-bottom: 22px;
+            position: relative;
+        }
+
+        .premium-form-group label {
+            display: block;
+            color: #a0aec0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .input-icon-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon-wrapper i {
+            position: absolute;
+            left: 15px;
+            color: #4a5568;
+            font-size: 1rem;
+            transition: color 0.3s;
+        }
+
+        .premium-input {
+            width: 100%;
+            background: rgba(5, 11, 22, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px 15px 12px 42px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .premium-input:focus {
+            border-color: #00a8ff;
+            box-shadow: 0 0 10px rgba(0, 168, 255, 0.3);
+            background: rgba(5, 11, 22, 0.95);
+        }
+
+        .premium-input:focus + i {
+            color: #00a8ff;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            color: #4a5568;
+            cursor: pointer;
+            transition: color 0.3s;
+            font-size: 1rem;
+        }
+
+        .toggle-password:hover {
+            color: #a0aec0;
+        }
+
+        .forgot-password-link {
+            position: absolute;
+            right: 0;
+            top: 0;
+            color: #8f9cae;
+            text-decoration: none;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+
+        .forgot-password-link:hover {
+            color: #00a8ff;
+        }
+
+        .btn-access-dashboard {
+            width: 100%;
+            background: linear-gradient(135deg, #002244 0%, #004488 50%, #002244 100%);
+            border: 1px solid rgba(0, 168, 255, 0.3);
+            color: #ffffff;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            margin-top: 10px;
+        }
+
+        .btn-access-dashboard:hover {
+            background: linear-gradient(135deg, #003366 0%, #0055aa 50%, #003366 100%);
+            border-color: rgba(0, 168, 255, 0.6);
+            box-shadow: 0 4px 20px rgba(0, 168, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn-access-dashboard:active {
+            transform: translateY(1px);
+        }
+
+        .flash-messages {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+
+        .flash-msg {
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .flash-msg.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fc8181;
+        }
+
+        .copyright-tag {
+            text-align: center;
+            margin-top: 25px;
+            color: #4a5568;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="login-wrapper">
+    <div class="login-container">
+        <div class="login-card-premium">
+            <div class="login-brand">
+                <div class="logo-circle">
+                    <img src="https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png" alt="LPL Logo" onerror="this.style.display='none'">
+                </div>
+                <h1>REP<span>ON</span></h1>
+                <p>Plataforma de Inteligência Comercial</p>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <ul class="flash-messages">
+                        {% for category, message in messages %}
+                            <li class="flash-msg {{ category }}">
+                                <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+            
+            <form action="{{ url_for('login') }}" method="POST">
+                <div class="premium-form-group">
+                    <label for="username">Email</label>
+                    <div class="input-icon-wrapper">
+                        <input type="text" id="username" name="username" class="premium-input" placeholder="seu@email.com.br" required autocomplete="username">
+                        <i class="fa-regular fa-user"></i>
+                    </div>
+                </div>
+                
+                <div class="premium-form-group">
+                    <label for="password">Senha</label>
+                    <a href="#" class="forgot-password-link" onclick="alert('Funcionalidade em desenvolvimento. Por favor, contate o administrador.')">Esqueceu a senha?</a>
+                    <div class="input-icon-wrapper">
+                        <input type="password" id="password" name="password" class="premium-input" placeholder="••••••••" required autocomplete="current-password">
+                        <i class="fa-solid fa-lock"></i>
+                        <i class="fa-regular fa-eye toggle-password" id="toggle-password-btn" onclick="togglePasswordVisibility()"></i>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-access-dashboard">
+                    <i class="fa-solid fa-lock"></i> Acessar Dashboard
+                </button>
+            </form>
+
+            <div class="copyright-tag">
+                &copy; 2026 REPON
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById("password");
+            const toggleIcon = document.getElementById("toggle-password-btn");
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleIcon.classList.remove("fa-eye");
+                toggleIcon.classList.add("fa-eye-slash");
+            } else {
+                passwordInput.type = "password";
+                toggleIcon.classList.remove("fa-eye-slash");
+                toggleIcon.classList.add("fa-eye");
+            }
+        }
+    </script>
+</body>
+</html>

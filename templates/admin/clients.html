@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestão de Clientes - LPL{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-title">
+        <p style="font-weight: 700; color: var(--primary);">ADMIN / CLIENTES</p>
+        <h1 style="font-size: 2.2rem; font-weight: 800; font-family: 'Outfit', sans-serif;">Gestão de Clientes</h1>
+        <p>Cadastre e gerencie os ambientes dos clientes</p>
+    </div>
+    <button class="btn" onclick="toggleNewClientForm()"><i class="fa-solid fa-plus"></i> Novo Cliente</button>
+</div>
+
+<!-- Formulário de Criação (Slide down) -->
+<div id="new-client-card" class="glass-panel" style="display: none; margin-bottom: 2rem; max-width: 800px;">
+    <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 1.25rem; font-weight: 700;"><i class="fa-solid fa-plus"></i> Cadastrar Nova Empresa</h3>
+    
+    <form action="{{ url_for('admin_new_client') }}" method="POST">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="form-group">
+                <label>Nome do Cliente / Empresa</label>
+                <input type="text" name="name" class="form-input" placeholder="ex: Amostra Ltda" required>
+            </div>
+            <div class="form-group">
+                <label>Identificador Único (Slug - Letras minúsculas e sem espaços)</label>
+                <input type="text" name="slug" class="form-input" placeholder="ex: amostra" required>
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="form-group">
+                <label>Cor Primária (Hex)</label>
+                <input type="color" name="primary_color" class="form-input" style="height: 45px; padding: 2px;" value="#6366f1">
+            </div>
+            <div class="form-group">
+                <label>Cor Secundária (Hex)</label>
+                <input type="color" name="secondary_color" class="form-input" style="height: 45px; padding: 2px;" value="#f97316">
+            </div>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label>Módulos / Serviços Habilitados</label>
+            <div style="display: flex; gap: 2rem; margin-top: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="services" value="Sell Out" checked> Sell Out
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="services" value="Sell In"> Sell In
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="services" value="OL"> Operação Logística (OL)
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="services" value="Campanhas"> Campanhas
+                </label>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn">Salvar Cliente</button>
+            <button type="button" class="btn btn-secondary" onclick="toggleNewClientForm()">Cancelar</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Clientes -->
+<div class="table-card">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Empresa</th>
+                <th>Slug</th>
+                <th>Status</th>
+                <th>Tema</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in clients %}
+            <tr>
+                <td style="font-weight: 700; font-size: 0.95rem;">{{ c.name }}</td>
+                <td><code style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem;">{{ c.slug }}</code></td>
+                <td><span class="badge badge-success">{{ c.status }}</span></td>
+                <td>
+                    <div style="display: flex; gap: 0.25rem;">
+                        <span style="display: inline-block; width: 16px; height: 16px; border-radius: 3px; background-color: {{ c.primary_color }};"></span>
+                        <span style="display: inline-block; width: 16px; height: 16px; border-radius: 3px; background-color: {{ c.secondary_color }};"></span>
+                    </div>
+                </td>
+                <td>
+                    <a href="{{ url_for('admin_manage_client', client_id=c.id) }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;">
+                        Gerenciar Empresa <i class="fa-solid fa-arrow-right-long" style="margin-left: 0.25rem;"></i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleNewClientForm() {
+        const card = document.getElementById("new-client-card");
+        card.style.display = card.style.display === "none" ? "block" : "none";
+    }
+</script>
+{% endblock %}

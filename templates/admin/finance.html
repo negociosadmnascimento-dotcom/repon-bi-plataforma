@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel Financeiro - LPL{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-title">
+        <p style="font-weight: 700; color: var(--success);">ADMIN / FINANCEIRO</p>
+        <h1 style="font-size: 2.2rem; font-weight: 800; font-family: 'Outfit', sans-serif;">Gestão de Mensalidades</h1>
+        <p>Acompanhe e registre o status de pagamento das assinaturas dos clientes</p>
+    </div>
+    <button class="btn" onclick="togglePaymentForm()"><i class="fa-solid fa-plus"></i> Registrar Pagamento</button>
+</div>
+
+<!-- Slide down form para novo pagamento -->
+<div id="new-payment-card" class="glass-panel" style="display: none; margin-bottom: 2.5rem; max-width: 600px;">
+    <h3 style="font-family: 'Outfit'; margin-bottom: 1.25rem;"><i class="fa-solid fa-file-signature"></i> Lançar Mensalidade</h3>
+    <form action="{{ url_for('admin_register_payment') }}" method="POST">
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label>Selecione o Cliente</label>
+            <select name="client_id" class="filter-select" style="background-color: rgba(10,13,20,0.8); height:45px;">
+                {% for c in clients %}
+                <option value="{{ c.id }}">{{ c.name }} (R$ {{ c.subscription_value }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div class="form-group">
+                <label>Mês de Referência (AAAA-MM)</label>
+                <input type="month" name="reference_month" class="form-input" required value="2026-05">
+            </div>
+            <div class="form-group">
+                <label>Valor Cobrado (R$)</label>
+                <input type="number" step="0.01" name="amount" class="form-input" placeholder="ex: 1500.00" required>
+            </div>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label>Status de Pagamento</label>
+            <select name="status" class="filter-select" style="background-color: rgba(10,13,20,0.8); height:45px;">
+                <option value="Pago">Pago / Liquidado</option>
+                <option value="Pendente" selected>Pendente</option>
+                <option value="Atrasado">Atrasado / Inadimplente</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn">Lançar Mensalidade</button>
+            <button type="button" class="btn btn-secondary" onclick="togglePaymentForm()">Cancelar</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabela de Histórico Financeiro -->
+<div class="table-card">
+    <div class="table-header">
+        <h3 style="font-family: 'Outfit'; font-weight:700;">Mensalidades Registradas</h3>
+    </div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Mês Referência</th>
+                <th>Valor Cobrado</th>
+                <th>Status</th>
+                <th>Data Pagamento</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in payments %}
+            <tr>
+                <td style="font-weight: 700;">{{ p.client.name }}</td>
+                <td><code style="background: rgba(255,255,255,0.03); padding: 2px 6px; border-radius: 4px;">{{ p.reference_month }}</code></td>
+                <td style="font-weight: 600;">R$ {{ "{:,.2f}".format(p.amount).replace(",", "X").replace(".", ",").replace("X", ".") }}</td>
+                <td>
+                    <span class="badge 
+                        {% if p.status == 'Pago' %}badge-success
+                        {% elif p.status == 'Pendente' %}badge-pending
+                        {% else %}badge-danger{% endif %}">
+                        {{ p.status }}
+                    </span>
+                </td>
+                <td>{{ p.payment_date.strftime("%d/%m/%Y") if p.payment_date else "-" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function togglePaymentForm() {
+        const card = document.getElementById("new-payment-card");
+        card.style.display = card.style.display === "none" ? "block" : "none";
+    }
+</script>
+{% endblock %}

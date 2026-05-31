@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload de Dados - LPL{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-title">
+        <p style="font-weight: 700; color: var(--secondary);">ADMIN / UPLOAD</p>
+        <h1 style="font-size: 2.2rem; font-weight: 800; font-family: 'Outfit', sans-serif;">Importador de Dados</h1>
+        <p>Faça o upload do arquivo Excel para alimentar o painel do cliente</p>
+    </div>
+</div>
+
+<div class="glass-panel" style="max-width: 800px; margin: 0 auto;">
+    <h3 style="font-family: 'Outfit'; margin-bottom: 1.5rem; font-weight:700;"><i class="fa-solid fa-cloud-arrow-up"></i> Configuração do Upload</h3>
+    
+    <form id="upload-form" enctype="multipart/form-data">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <!-- Cliente Selector -->
+            <div class="form-group">
+                <label>1. Cliente Destino</label>
+                <select name="client_id" class="filter-select" style="background-color: rgba(10,13,20,0.8); height: 45px;" required>
+                    {% for c in clients %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Tipo de dados toggle -->
+            <div class="form-group">
+                <label>2. Tipo de Dados</label>
+                <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+                    <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; cursor: pointer; font-weight:600; background-color: rgba(255,255,255,0.02);" id="label-sellout">
+                        <input type="radio" name="data_type" value="Sell Out" checked style="accent-color: var(--primary);" onchange="updateRadioTheme()"> <i class="fa-solid fa-cart-shopping"></i> Sell Out
+                    </label>
+                    <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; cursor: pointer; font-weight:600; background-color: rgba(255,255,255,0.02);" id="label-sellin">
+                        <input type="radio" name="data_type" value="Sell In" style="accent-color: var(--primary);" onchange="updateRadioTheme()"> <i class="fa-solid fa-truck-ramp-box"></i> Sell In
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- File Drop Area -->
+        <div class="form-group" style="margin-bottom: 2rem;">
+            <label>3. Selecione o arquivo de vendas</label>
+            <div style="border: 2px dashed var(--border-color); border-radius: 0.75rem; padding: 3rem; text-align: center; background: rgba(0,0,0,0.2); position: relative; cursor: pointer; transition: border-color 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border-color)'" ondrop="handleDrop(event)">
+                <i class="fa-solid fa-file-excel" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <h4 style="font-family: 'Outfit'; margin-bottom: 0.5rem;">Escolha o arquivo ou arraste aqui</h4>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1.5rem;">Formatos aceitos: XLSX, XLS ou CSV (delimitador ponto e vírgula)</p>
+                <input type="file" name="file" id="file-input" style="opacity: 0; position: absolute; top:0; left:0; width:100%; height:100%; cursor:pointer;" required onchange="showFilename(this)">
+                <div id="selected-filename" style="margin-top: 1rem; font-weight: 700; color: var(--success); display: none;"></div>
+            </div>
+        </div>
+        
+        <!-- Barra de Progresso Real Time -->
+        <div id="progress-container" style="display: none; margin-bottom: 2rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem;">
+                <span id="progress-status" style="font-weight: 700; color: var(--primary);">Preparando arquivo...</span>
+                <span id="progress-percent" style="font-weight: 700;">0%</span>
+            </div>
+            <div style="width: 100%; height: 10px; background-color: rgba(255, 255, 255, 0.05); border-radius: 5px; overflow: hidden;">
+                <div id="progress-bar" style="width: 0%; height: 100%; background-color: var(--primary); transition: width 0.3s ease; box-shadow: 0 0 10px var(--primary);"></div>
+            </div>
+            <div id="progress-stats" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); text-align: right;">
+                Lendo registros...
+            </div>
+        </div>
+        
+        <button type="submit" id="submit-btn" class="btn" style="width: 100%; padding: 1rem;"><i class="fa-solid fa-cloud-arrow-up"></i> Iniciar Processamento dos Dados</button>
+    </form>
+    
+    <!-- Info Box: Colunas Obrigatórias -->
+    <div style="margin-top: 2.5rem; padding: 1.5rem; background: rgba(99, 102, 241, 0.03); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 0.5rem;">
+        <h4 style="font-family: 'Outfit'; margin-bottom: 0.75rem; color: var(--primary);"><i class="fa-solid fa-circle-info"></i> Colunas Obrigatórias do Arquivo Excel</h4>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; word-break: break-all;">
+            Certifique-se de que sua planilha contém as seguintes colunas (a caixa alta ou baixa não importa): <br>
+            <code>INDUSTRIA</code>, <code>DATA</code>, <code>CNPJ</code>, <code>RAZAO SOCIAL</code>, <code>ID SUPERVISOR</code>, <code>SUPERVISOR</code>, <code>ID VENDEDOR</code>, <code>VENDEDOR</code>, <code>UF</code>, <code>EAN</code>, <code>MATERIAL/DESC</code>, <code>UNID. FATURADA</code>, <code>VALOR FAT.</code>, <code>DISTRIBUIDOR</code>, <code>ANO</code>, <code>REDE</code>, <code>CLIENTE</code>, <code>STATUS OL</code>, <code>STATUS MANUAL</code>, <code>VALOR OL</code>, <code>SHARE %</code>, <code>MES</code>.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateRadioTheme() {
+        const radios = document.getElementsByName("data_type");
+        radios.forEach(radio => {
+            const label = document.getElementById("label-" + radio.value.toLowerCase().replace(" ", ""));
+            if (radio.checked) {
+                label.style.backgroundColor = "var(--primary-glow)";
+                label.style.borderColor = "var(--primary)";
+            } else {
+                label.style.backgroundColor = "rgba(255,255,255,0.02)";
+                label.style.borderColor = "var(--border-color)";
+            }
+        });
+    }
+
+    function showFilename(input) {
+        const div = document.getElementById("selected-filename");
+        if (input.files && input.files.length > 0) {
+            div.innerText = "Arquivo selecionado: " + input.files[0].name;
+            div.style.display = "block";
+        } else {
+            div.style.display = "none";
+        }
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const input = document.getElementById("file-input");
+        if (e.dataTransfer.files.length > 0) {
+            input.files = e.dataTransfer.files;
+            showFilename(input);
+        }
+    }
+
+    // Gerenciador do Envio Assíncrono com Barra de Progresso Real Time
+    document.getElementById("upload-form").addEventListener("submit", function(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = document.getElementById("submit-btn");
+        const progressContainer = document.getElementById("progress-container");
+        const progressBar = document.getElementById("progress-bar");
+        const progressStatus = document.getElementById("progress-status");
+        const progressPercent = document.getElementById("progress-percent");
+        const progressStats = document.getElementById("progress-stats");
+        
+        // Bloquear botão de envio e mostrar progresso
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+        progressContainer.style.display = "block";
+        
+        // Reset progress bar visual states
+        progressBar.style.backgroundColor = "var(--primary)";
+        progressBar.style.width = "0%";
+        progressPercent.innerText = "0%";
+        progressStatus.innerText = "Fazendo upload do arquivo...";
+        progressStats.innerText = "Enviando arquivo para o servidor...";
+        
+        // 1. Enviar arquivo para processamento assíncrono
+        fetch("{{ url_for('admin_upload_process') }}", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.error || "Erro ao iniciar importação.");
+            }
+            
+            const uploadId = data.upload_id;
+            
+            // 2. Poll progress status at intervals
+            const interval = setInterval(() => {
+                fetch(`/admin/upload/status/${uploadId}`)
+                .then(res => res.json())
+                .then(progressData => {
+                    const percent = progressData.progress || 0;
+                    const status = progressData.status || "Processando...";
+                    const current = progressData.current_row || 0;
+                    const total = progressData.total_rows || 0;
+                    
+                    progressBar.style.width = percent + "%";
+                    progressPercent.innerText = percent + "%";
+                    progressStatus.innerText = status;
+                    
+                    if (total > 0) {
+                        progressStats.innerText = `Processado: ${current.toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')} linhas.`;
+                    } else {
+                        progressStats.innerText = "Lendo registros...";
+                    }
+                    
+                    if (status === "Concluído" || percent >= 100) {
+                        clearInterval(interval);
+                        progressBar.style.backgroundColor = "var(--success)";
+                        progressBar.style.boxShadow = "0 0 10px var(--success)";
+                        progressStatus.innerHTML = '<i class="fa-solid fa-circle-check" style="color: var(--success);"></i> Importação Concluída com sucesso!';
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Iniciar Processamento dos Dados';
+                        
+                        setTimeout(() => {
+                            alert(`Sucesso! ${current.toLocaleString('pt-BR')} linhas foram importadas.`);
+                            window.location.reload();
+                        }, 500);
+                    } else if (status === "Erro" || progressData.error) {
+                        clearInterval(interval);
+                        progressBar.style.backgroundColor = "var(--danger)";
+                        progressBar.style.boxShadow = "0 0 10px var(--danger)";
+                        progressStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Erro ao Processar Arquivo';
+                        progressStats.innerText = "Erro: " + (progressData.error || "Erro inesperado.");
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Iniciar Processamento dos Dados';
+                    }
+                })
+                .catch(err => {
+                    console.error("Erro ao ler progresso:", err);
+                });
+            }, 1000);
+        })
+        .catch(err => {
+            progressStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Falha no Upload';
+            progressStats.innerText = err.message || "Erro desconhecido.";
+            progressBar.style.backgroundColor = "var(--danger)";
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Iniciar Processamento dos Dados';
+        });
+    });
+
+    // Inicializar cores do toggle
+    document.addEventListener("DOMContentLoaded", updateRadioTheme);
+</script>
+{% endblock %}

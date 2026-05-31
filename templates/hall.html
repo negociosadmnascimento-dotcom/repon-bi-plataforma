@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Controle - LPL RepOn</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body.hall-wrapper {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, rgba(16, 28, 54, 0.95) 0%, rgba(6, 10, 20, 1) 100%),
+                        url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1920&q=80') no-repeat center center;
+            background-size: cover;
+            background-blend-mode: multiply;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Top left indicator & logo */
+        .hall-sidebar-indicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        .hall-indicator-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            background: rgba(10, 20, 38, 0.8);
+            border: 1px solid rgba(0, 168, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a0aec0;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hall-indicator-btn:hover {
+            color: #ffffff;
+            border-color: #00a8ff;
+            box-shadow: 0 0 10px rgba(0, 168, 255, 0.3);
+            background: rgba(0, 168, 255, 0.1);
+        }
+
+        .hall-indicator-btn.logo-brand {
+            background: #2b1bfb;
+            color: white;
+            border: none;
+            box-shadow: 0 0 15px rgba(43, 27, 251, 0.6);
+            font-weight: 800;
+            font-size: 0.8rem;
+        }
+
+        .hall-main-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            z-index: 5;
+            height: 100%;
+        }
+
+        .hall-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .hall-logo-center {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: #0d1a30;
+            border: 3px solid rgba(0, 168, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 0 30px rgba(0, 168, 255, 0.3);
+        }
+
+        .hall-logo-center img {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .hall-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .hall-header h1 span {
+            color: #ff3b30;
+        }
+
+        .hall-header p {
+            color: #8f9cae;
+            font-size: 0.95rem;
+            margin: 10px 0 0 0;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        /* Access services main cards */
+        .hall-services-grid {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 50px;
+        }
+
+        .hall-service-card {
+            flex: 1;
+            height: 180px;
+            border-radius: 15px;
+            background: rgba(10, 25, 47, 0.7);
+            border: 1px solid rgba(0, 168, 255, 0.3);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .hall-service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 168, 255, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .hall-service-card i {
+            font-size: 3rem;
+            color: #ffffff;
+            transition: transform 0.3s ease;
+        }
+
+        .hall-service-card span {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .hall-service-card:hover {
+            border-color: #00a8ff;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 168, 255, 0.25);
+            background: rgba(13, 35, 66, 0.8);
+        }
+
+        .hall-service-card:hover::before {
+            opacity: 1;
+        }
+
+        .hall-service-card:hover i {
+            transform: scale(1.1);
+        }
+
+        /* Locked / Coming soon cards */
+        .hall-metrics-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 30px;
+        }
+
+        .hall-metric-card {
+            background: rgba(10, 20, 38, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            backdrop-filter: blur(5px);
+        }
+
+        .hall-metric-card i {
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+
+        .hall-metric-card .title {
+            font-size: 0.65rem;
+            color: #8f9cae;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .hall-metric-card .value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .hall-coming-soon-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .hall-locked-card {
+            height: 120px;
+            background: rgba(5, 10, 20, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            opacity: 0.7;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .hall-locked-card i {
+            font-size: 1.5rem;
+            color: #4a5568;
+        }
+
+        .hall-locked-card .title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hall-locked-card .subtitle {
+            font-size: 0.6rem;
+            color: #4a5568;
+        }
+
+        /* Diagonal Ribbon for locked cards */
+        .ribbon-locked {
+            position: absolute;
+            top: 15px;
+            right: -25px;
+            background: #b7791f;
+            color: #ffffff;
+            font-size: 0.5rem;
+            font-weight: 800;
+            padding: 4px 25px;
+            transform: rotate(45deg);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hall-footer-logout {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="hall-wrapper">
+    <!-- Indicator top left icons -->
+    <div class="hall-sidebar-indicator">
+        <div class="hall-indicator-btn logo-brand">LPL</div>
+        <div class="hall-indicator-btn" onclick="window.location.reload()"><i class="fa-solid fa-house"></i></div>
+        <a class="hall-indicator-btn" href="{{ url_for('logout') }}"><i class="fa-solid fa-cart-shopping"></i></a>
+    </div>
+
+    <div class="hall-main-container">
+        <div class="hall-header">
+            <div class="hall-logo-center">
+                <img src="{{ theme.logo|default('/static/img/default_logo.png') }}" alt="Logo Cliente" onerror="this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
+            </div>
+            <h1>PAINEL DE <span>CONTROLE</span></h1>
+            <p>Inteligência de Vendas • Dados Reais • Decisão Estratégica</p>
+        </div>
+
+        <!-- Services Selection -->
+        <div class="hall-services-grid">
+            {% if "Sell Out" in enabled_services %}
+            <a href="{{ url_for('dashboard_page', service='sell_out') }}" class="hall-service-card">
+                <i class="fa-solid fa-box" style="color: #00a8ff;"></i>
+                <span>Sell Out</span>
+            </a>
+            {% endif %}
+            
+            {% if "Sell In" in enabled_services %}
+            <a href="{{ url_for('dashboard_page', service='sell_in') }}" class="hall-service-card">
+                <i class="fa-solid fa-cart-shopping" style="color: #00a8ff;"></i>
+                <span>Sell In</span>
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Metrics cards row -->
+        <div class="hall-metrics-bar">
+            <div class="hall-metric-card">
+                <i class="fa-solid fa-dollar-sign" style="color: #00a8ff;"></i>
+                <div class="title">Faturamento</div>
+                <div class="value">...</div>
+            </div>
+            <div class="hall-metric-card">
+                <i class="fa-solid fa-users" style="color: #38a169;"></i>
+                <div class="title">CNPJs Positivados</div>
+                <div class="value">...</div>
+            </div>
+            <div class="hall-metric-card">
+                <i class="fa-solid fa-chart-line" style="color: #a0aec0;"></i>
+                <div class="title">vs mesmo período</div>
+                <div class="value">...</div>
+            </div>
+            <div class="hall-metric-card">
+                <i class="fa-solid fa-truck" style="color: #e53e3e;"></i>
+                <div class="title">Distribuidores</div>
+                <div class="value">...</div>
+            </div>
+        </div>
+
+        <!-- Locked cards with Ribbon -->
+        <div class="hall-coming-soon-grid">
+            <div class="hall-locked-card">
+                <div class="ribbon-locked">Em Breve</div>
+                <i class="fa-solid fa-trophy"></i>
+                <div class="title">Campanha de Vendas</div>
+                <div class="subtitle">Pedido Previsto & Gamificação</div>
+            </div>
+            <div class="hall-locked-card">
+                <div class="ribbon-locked">Em Breve</div>
+                <i class="fa-solid fa-credit-card"></i>
+                <div class="title">Conta Corrente</div>
+                <div class="subtitle">Saldo • Histórico</div>
+            </div>
+            <div class="hall-locked-card">
+                <div class="ribbon-locked">Em Breve</div>
+                <i class="fa-solid fa-chart-bar"></i>
+                <div class="title">Controle Faturamento</div>
+                <div class="subtitle">Itens • Ranking Top</div>
+            </div>
+            <div class="hall-locked-card">
+                <div class="ribbon-locked">Em Breve</div>
+                <i class="fa-solid fa-calendar-days"></i>
+                <div class="title">Agenda</div>
+                <div class="subtitle">Reuniões • Tarefas</div>
+            </div>
+            <div class="hall-locked-card">
+                <div class="ribbon-locked">Em Breve</div>
+                <i class="fa-solid fa-calculator"></i>
+                <div class="title">Simulador de Margem</div>
+                <div class="subtitle">Margem • Rentabilidade</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Logout btn -->
+    <div class="hall-footer-logout">
+        <a href="{{ url_for('logout') }}" class="btn logout-btn" style="border-radius: 8px; font-weight: 700; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #fc8181; display: flex; align-items: center; gap: 8px; text-decoration: none; padding: 10px 15px;">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
+        </a>
+    </div>
+
+    <script>
+        // Fetch overview metrics dynamically for the current tenant to display in the metrics row of the Hall page
+        document.addEventListener("DOMContentLoaded", function() {
+            // Default load metrics from Sell Out if enabled, otherwise Sell In
+            const service = "{% if 'Sell Out' in enabled_services %}sell_out{% else %}sell_in{% endif %}";
+            if (service) {
+                fetch("/api/data/" + service, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        industria: "Todas",
+                        distribuidor: "Todos",
+                        supervisor: "Todos",
+                        vendedor: "Todos",
+                        cliente: "Todos",
+                        uf: "Todas",
+                        ano: "Todos",
+                        mes: "Todos",
+                        produto: "Todos"
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    const cards = document.querySelectorAll(".hall-metric-card .value");
+                    if (cards.length >= 4) {
+                        cards[0].innerText = data.kpis.faturamento || "R$ 0,00";
+                        cards[1].innerText = data.kpis.cnpjs || "0";
+                        cards[2].innerText = "+14.9%";
+                        cards[3].innerText = data.charts && data.charts.distrib_labels ? data.charts.distrib_labels.length : "...";
+                    }
+                })
+                .catch(err => {
+                    console.error("Error loading hall metrics:", err);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

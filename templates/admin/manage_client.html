@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar {{ client.name }} - LPL{% endblock %}
+
+{% block content %}
+<!-- Header do Cliente Gerenciado -->
+<div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2.5rem; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 1rem;">
+    <img src="{{ client.logo_path or '/static/img/default_logo.png' }}" alt="Logo" style="height: 60px; width: 60px; border-radius: 50%; object-fit: cover;" onerror="this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
+    <div>
+        <h1 style="font-family: 'Outfit'; font-size: 1.8rem; font-weight: 800;">{{ client.name }}</h1>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Slug: <code>{{ client.slug }}</code> • Status: <span class="badge badge-success">{{ client.status }}</span></p>
+    </div>
+    <a href="{{ url_for('admin_clients') }}" class="btn btn-secondary" style="margin-left: auto;"><i class="fa-solid fa-arrow-left"></i> Voltar</a>
+</div>
+
+<!-- Sub-Abas de Gerenciamento da Empresa -->
+<div class="admin-tabs-nav">
+    <button class="admin-tab-btn active" onclick="switchAdminTab(event, 'usuarios')"><i class="fa-solid fa-users"></i> Usuários</button>
+    <button class="admin-tab-btn" onclick="switchAdminTab(event, 'assinatura')"><i class="fa-solid fa-file-invoice-dollar"></i> Assinatura</button>
+    <button class="admin-tab-btn" onclick="switchAdminTab(event, 'identidade')"><i class="fa-solid fa-palette"></i> Identidade & Dashboard</button>
+</div>
+
+<!-- 1. Aba Usuários -->
+<div id="adm-tab-usuarios" class="admin-tab-content active">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="font-family: 'Outfit', sans-serif;">Gestão de Acessos</h3>
+        <button class="btn" onclick="toggleNewUserForm()"><i class="fa-solid fa-plus"></i> Novo Acesso</button>
+    </div>
+    
+    <!-- Novo Usuário Formulário -->
+    <div id="new-user-card" class="glass-panel" style="display: none; margin-bottom: 1.5rem; max-width: 600px;">
+        <h4 style="margin-bottom: 1rem;"><i class="fa-solid fa-user-plus"></i> Cadastrar Usuário de Acesso</h4>
+        <form action="{{ url_for('admin_new_client_user', client_id=client.id) }}" method="POST">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label>Nome do Usuário</label>
+                    <input type="text" name="username" class="form-input" required placeholder="ex: Leandro">
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" name="email" class="form-input" required placeholder="ex: leandro@empresa.com">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group">
+                    <label>Senha Provisória</label>
+                    <input type="password" name="password" class="form-input" required placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label>Permissão</label>
+                    <select name="permission" class="filter-select" style="background-color: rgba(10,13,20,0.8); height: 45px;">
+                        <option value="VISUALIZADOR">Visualizador</option>
+                        <option value="ADMINISTRADOR">Administrador (Visualiza e edita dados)</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn">Cadastrar Usuário</button>
+                <button type="button" class="btn btn-secondary" onclick="toggleNewUserForm()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de Acessos -->
+    <div class="table-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Usuário</th>
+                    <th>E-mail</th>
+                    <th>Permissão</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td style="font-weight: 700;">{{ u.username }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        <span class="badge" style="background-color: rgba(59,130,246,0.1); color: #3b82f6;">{{ u.permission }}</span>
+                    </td>
+                    <td><span class="badge badge-success">{{ u.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 2. Aba Assinatura -->
+<div id="adm-tab-assinatura" class="admin-tab-content">
+    <div class="glass-panel" style="max-width: 600px;">
+        <h3 style="font-family: 'Outfit'; margin-bottom: 1.5rem;">Configurações de Faturamento</h3>
+        <form action="{{ url_for('admin_update_billing', client_id=client.id) }}" method="POST">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Valor Mensal da Assinatura (R$)</label>
+                <input type="number" step="0.01" name="subscription_value" class="form-input" value="{{ client.subscription_value }}">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Dia do Vencimento</label>
+                <input type="number" min="1" max="28" name="subscription_due_day" class="form-input" value="{{ client.subscription_due_day }}">
+            </div>
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label>Status Financeiro da Assinatura</label>
+                <select name="subscription_status" class="filter-select" style="background-color: rgba(10,13,20,0.8); height:45px;">
+                    <option value="Ativo" {% if client.subscription_status == 'Ativo' %}selected{% endif %}>Ativo / Liberado</option>
+                    <option value="Suspenso" {% if client.subscription_status == 'Suspenso' %}selected{% endif %}>Suspenso / Bloqueado</option>
+                </select>
+            </div>
+            <button type="submit" class="btn">Salvar Alterações</button>
+        </form>
+    </div>
+</div>
+
+<!-- 3. Aba Identidade & Dashboard -->
+<div id="adm-tab-identidade" class="admin-tab-content">
+    <div class="glass-panel" style="max-width: 600px;">
+        <h3 style="font-family: 'Outfit'; margin-bottom: 1.5rem;">Identidade Visual e Temas</h3>
+        <form action="{{ url_for('admin_update_identity', client_id=client.id) }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Logo do Cliente (PNG, JPG)</label>
+                <input type="file" name="logo" class="form-input">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label>Cor Primária (Hex)</label>
+                <input type="color" name="primary_color" class="form-input" style="height: 45px; padding: 2px;" value="{{ client.primary_color }}">
+            </div>
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label>Cor Secundária (Hex)</label>
+                <input type="color" name="secondary_color" class="form-input" style="height: 45px; padding: 2px;" value="{{ client.secondary_color }}">
+            </div>
+            <button type="submit" class="btn">Salvar Identidade Visual</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function switchAdminTab(event, tabName) {
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.remove('active'));
+        
+        event.currentTarget.classList.add('active');
+        document.getElementById('adm-tab-' + tabName).classList.add('active');
+    }
+
+    function toggleNewUserForm() {
+        const form = document.getElementById("new-user-card");
+        form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+</script>
+{% endblock %}

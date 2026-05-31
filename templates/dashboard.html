@@ -1,0 +1,1306 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ service.upper().replace('_', ' ') }} - Dashboard{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Premium layout scrollable table styling */
+    .table-responsive-container {
+        width: 100%;
+        overflow-x: auto;
+        margin-top: 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .premium-data-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+    
+    .premium-data-table th, .premium-data-table td {
+        padding: 0.85rem 1rem;
+        font-size: 0.825rem;
+    }
+    
+    .premium-data-table th {
+        background-color: rgba(255,255,255,0.01);
+        color: var(--text-secondary);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .premium-data-table td {
+        border-bottom: 1px solid rgba(255,255,255,0.02);
+        color: var(--text-primary);
+    }
+    
+    .premium-data-table tr:hover td {
+        background-color: rgba(255,255,255,0.02);
+    }
+    
+    .badge-premium {
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+    
+    .badge-premium-high {
+        background-color: rgba(16, 185, 129, 0.15);
+        color: var(--success);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .badge-premium-med {
+        background-color: rgba(245, 158, 11, 0.15);
+        color: var(--warning);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    
+    .badge-premium-low {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: var(--danger);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .search-bar-premium {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        width: 300px;
+    }
+    
+    .search-bar-premium input {
+        background: none;
+        border: none;
+        outline: none;
+        color: #fff;
+        font-size: 0.85rem;
+        width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-title">
+        <h1 style="text-transform: capitalize;">{{ service.replace('_', ' ') }}</h1>
+        <p>Visão de Performance e Inteligência Comercial</p>
+    </div>
+</div>
+
+<!-- Sub-Abas do Dashboard -->
+<div class="sub-tabs-container">
+    <div class="sub-tab active" onclick="switchSubTab('visao_geral')">Visão Geral</div>
+    <div class="sub-tab" onclick="switchSubTab('clientes')">Clientes</div>
+    <div class="sub-tab" onclick="switchSubTab('produtos')">Produtos</div>
+    <div class="sub-tab" onclick="switchSubTab('distribuidor')">Distribuidor</div>
+    <div class="sub-tab" onclick="switchSubTab('decisao_comercial')">Decisão Comercial</div>
+    <div class="sub-tab" onclick="switchSubTab('simulador_ofertas')">Simulador de Ofertas <span style="background-color: var(--secondary); color:#fff; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:700;">EM TESTE</span></div>
+</div>
+
+<!-- Filtros Gerais -->
+<div class="filters-bar" id="filters-container">
+    <div class="filter-group">
+        <label>Indústria</label>
+        <select class="filter-select" id="filter-industria" onchange="loadDashboardData()"><option value="Todas">Todas</option></select>
+    </div>
+    <div class="filter-group">
+        <label>Distribuidor</label>
+        <select class="filter-select" id="filter-distribuidor" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+    </div>
+    <div class="filter-group">
+        <label>Supervisor</label>
+        <select class="filter-select" id="filter-supervisor" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+    </div>
+    <div class="filter-group">
+        <label>Vendedor</label>
+        <select class="filter-select" id="filter-vendedor" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+    </div>
+    <div class="filter-group">
+        <label>Cliente</label>
+        <select class="filter-select" id="filter-cliente" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+    </div>
+    <div class="filter-group">
+        <label>UF</label>
+        <select class="filter-select" id="filter-uf" onchange="loadDashboardData()"><option value="Todas">Todas</option></select>
+    </div>
+    <div class="filter-group">
+        <label>Ano</label>
+        <select class="filter-select" id="filter-ano" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+    </div>
+    <div class="filter-group">
+        <label>Mês</label>
+        <select class="filter-select" id="filter-mes" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+    </div>
+    <div class="filter-group">
+        <label>Produto</label>
+        <select class="filter-select" id="filter-produto" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+    </div>
+</div>
+
+<!-- CONTEÚDO DAS SUB-ABAS -->
+
+<!-- 1. Visão Geral -->
+<div id="tab-visao_geral" class="tab-content">
+    <div class="kpis-grid">
+        <div class="kpi-card">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-coins" style="color: #00a8ff;"></i> YTD 2026
+            </div>
+            <div class="kpi-value" id="kpi-faturamento">R$ 0,00</div>
+            <div class="kpi-subtext">Acumulado de vendas</div>
+        </div>
+        <div class="kpi-card secondary">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-box-open" style="color: var(--secondary);"></i> Unidades Faturadas
+            </div>
+            <div class="kpi-value" id="kpi-unidades">0</div>
+            <div class="kpi-subtext">Soma volumétrica total</div>
+        </div>
+        <div class="kpi-card success">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-receipt" style="color: var(--success);"></i> Ticket Médio
+            </div>
+            <div class="kpi-value" id="kpi-ticket">R$ 0,00</div>
+            <div class="kpi-subtext">Faturamento / Unidades</div>
+        </div>
+        <div class="kpi-card warning">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-shop" style="color: var(--warning);"></i> CNPJs Positivados
+            </div>
+            <div class="kpi-value" id="kpi-cnpjs">0</div>
+            <div class="kpi-subtext">Ponto de venda distinto</div>
+        </div>
+    </div>
+
+    <!-- Anexo 2 Layout: Gráficos de Visão Geral -->
+    <div class="charts-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="chart-card">
+            <div class="chart-title">Faturamento Anual — Crescimento vs Ano Anterior</div>
+            <div class="chart-container" style="height: 220px;">
+                <canvas id="chart-visao-faturamento-anual"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Positivação — CNPJs Distintos por Mês</div>
+            <div class="chart-container" style="height: 220px;">
+                <canvas id="chart-visao-positivacao-mes"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="charts-grid" style="grid-template-columns: 1fr; margin-bottom: 1.5rem;">
+        <div class="chart-card">
+            <div class="chart-title">Linha do Tempo Jan-Dez — Faturamento R$ (Todos os Anos)</div>
+            <div class="chart-container" style="height: 280px;">
+                <canvas id="chart-visao-tendencia-geral"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div class="chart-card">
+            <div class="chart-title">Unidades vs Faturamento R$ por Mês</div>
+            <div class="chart-container" style="height: 220px;">
+                <canvas id="chart-visao-unidades-fat-mes"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Ticket Médio Mês a Mês</div>
+            <div class="chart-container" style="height: 220px;">
+                <canvas id="chart-visao-ticket-medio-mes"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Clientes -->
+<div id="tab-clientes" class="tab-content" style="display: none;">
+    <div class="kpis-grid">
+        <div class="kpi-card">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-crown" style="color: #00a8ff;"></i> Faturamento TOP 50
+            </div>
+            <div class="kpi-value" id="kpi-cli-top50">R$ 0,00</div>
+            <div class="kpi-subtext">Clientes de curva A</div>
+        </div>
+        <div class="kpi-card secondary">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-address-card" style="color: var(--secondary);"></i> CNPJs Positivados
+            </div>
+            <div class="kpi-value" id="kpi-cli-cnpjs">0</div>
+            <div class="kpi-subtext">Total pontos de venda</div>
+        </div>
+        <div class="kpi-card success">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-boxes-stacked" style="color: var(--success);"></i> SKUs Distintos
+            </div>
+            <div class="kpi-value" id="kpi-cli-skus">0</div>
+            <div class="kpi-subtext">Soma por cliente</div>
+        </div>
+        <div class="kpi-card warning">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-scale-balanced" style="color: var(--warning);"></i> Ticket Médio / Cliente
+            </div>
+            <div class="kpi-value" id="kpi-cli-ticket">R$ 0,00</div>
+            <div class="kpi-subtext">Média por faturamento</div>
+        </div>
+    </div>
+    
+    <!-- Anexo 3 Layout: Clientes -->
+    <div class="charts-grid" style="grid-template-columns: 1fr; margin-bottom: 1.5rem;">
+        <div class="chart-card">
+            <div class="chart-title">Linha do Tempo — Faturamento (Colunas) + Unid. / Mix / Ticket (Linhas)</div>
+            <div class="chart-container" style="height: 280px;">
+                <canvas id="chart-clientes-multiaxis"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;">Ranking de Clientes — Detalhado</h3>
+            <div class="search-bar-premium">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                <input type="text" id="search-clientes" placeholder="Buscar por CNPJ ou nome..." oninput="filterClientesTable()">
+            </div>
+        </div>
+        
+        <div class="table-responsive-container">
+            <table class="premium-data-table" id="table-ranking-clientes">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>CNPJ</th>
+                        <th>Razão Social</th>
+                        <th>UF</th>
+                        <th>Faturado (R$)</th>
+                        <th>Unidades</th>
+                        <th>Mix (SKUs)</th>
+                        <th>Frequência</th>
+                        <th>Potencial</th>
+                        <th>Ticket Médio</th>
+                        <th>Share %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Alimentado via Javascript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Produtos -->
+<div id="tab-produtos" class="tab-content" style="display: none;">
+    <div class="kpis-grid">
+        <div class="kpi-card">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-tag" style="color: #00a8ff;"></i> Ticket Médio
+            </div>
+            <div class="kpi-value" id="kpi-prod-ticket">R$ 0,00</div>
+            <div class="kpi-subtext">Médio por SKU</div>
+        </div>
+        <div class="kpi-card secondary">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-star" style="color: var(--secondary);"></i> Fat. Top 20 SKUs
+            </div>
+            <div class="kpi-value" id="kpi-prod-top20">R$ 0,00</div>
+            <div class="kpi-subtext">Líderes de faturamento</div>
+        </div>
+        <div class="kpi-card success">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-circle-check" style="color: var(--success);"></i> CNPJs Positivados
+            </div>
+            <div class="kpi-value" id="kpi-prod-cnpjs">0</div>
+            <div class="kpi-subtext">Clientes alcançados</div>
+        </div>
+        <div class="kpi-card warning">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-box" style="color: var(--warning);"></i> SKUs na Base + TRI
+            </div>
+            <div class="kpi-value" id="kpi-prod-tri">0</div>
+            <div class="kpi-subtext">EANs na base de vendas</div>
+        </div>
+    </div>
+    
+    <!-- Anexo 4 Layout: Produtos -->
+    <div class="charts-grid" style="grid-template-columns: 1fr; margin-bottom: 1.5rem;">
+        <div class="chart-card">
+            <div class="chart-title">Linha do Tempo — Faturamento (Colunas) + Unid. / Ticket / CNPJ / Unid. p/ PDV (Linhas)</div>
+            <div class="chart-container" style="height: 280px;">
+                <canvas id="chart-produtos-multiaxis"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;">Ranking Detalhado de Produtos</h3>
+            <div class="search-bar-premium">
+                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                <input type="text" id="search-produtos" placeholder="Buscar por EAN ou descrição..." oninput="filterProdutosTable()">
+            </div>
+        </div>
+        
+        <div class="table-responsive-container">
+            <table class="premium-data-table" id="table-ranking-produtos">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>EAN</th>
+                        <th>Produto</th>
+                        <th>Indústria</th>
+                        <th>Faturado (R$)</th>
+                        <th>Unidades</th>
+                        <th>Unidades / CNPJ</th>
+                        <th>CNPJ Positiv.</th>
+                        <th>Ticket Médio/Unid.</th>
+                        <th>Share %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Alimentado via Javascript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Distribuidor -->
+<div id="tab-distribuidor" class="tab-content" style="display: none;">
+    <div class="kpis-grid" style="grid-template-columns: repeat(5, 1fr);">
+        <div class="kpi-card" style="padding: 1.25rem;">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-calculator" style="color: #00a8ff;"></i> Ticket Médio
+            </div>
+            <div class="kpi-value" id="kpi-dist-ticket" style="font-size: 1.5rem;">R$ 0,00</div>
+            <div class="kpi-subtext">Base Geral</div>
+        </div>
+        <div class="kpi-card secondary" style="padding: 1.25rem;">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-wallet" style="color: var(--secondary);"></i> Faturamento Total
+            </div>
+            <div class="kpi-value" id="kpi-dist-fat" style="font-size: 1.5rem;">R$ 0,00</div>
+            <div class="kpi-subtext">Acumulado geral</div>
+        </div>
+        <div class="kpi-card success" style="padding: 1.25rem;">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-check-double" style="color: var(--success);"></i> CNPJs Positivados
+            </div>
+            <div class="kpi-value" id="kpi-dist-cnpjs" style="font-size: 1.5rem;">0</div>
+            <div class="kpi-subtext">Clientes distintos</div>
+        </div>
+        <div class="kpi-card warning" style="padding: 1.25rem;">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-truck" style="color: var(--warning);"></i> Distribuidores
+            </div>
+            <div class="kpi-value" id="kpi-dist-base" style="font-size: 1.5rem;">0</div>
+            <div class="kpi-subtext">Parceiros integrados</div>
+        </div>
+        <div class="kpi-card success" style="padding: 1.25rem;">
+            <div class="kpi-title-row">
+                <i class="fa-solid fa-handshake" style="color: #00a8ff;"></i> Atendido OL
+            </div>
+            <div class="kpi-value" style="font-size: 1.5rem;">1</div>
+            <div class="kpi-subtext">Serviço Ativo</div>
+        </div>
+    </div>
+    
+    <!-- Anexo 5 Layout: Distribuidor -->
+    <div class="charts-grid" style="grid-template-columns: 1fr; margin-bottom: 1.5rem;">
+        <div class="chart-card">
+            <div class="chart-title">Linha do Tempo — Faturamento (Colunas) + Unid. / CNPJ / SKU Dist. / Ticket (Linhas)</div>
+            <div class="chart-container" style="height: 280px;">
+                <canvas id="chart-distribuidores-multiaxis"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="charts-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="chart-card">
+            <div class="chart-title">Ranking Distribuidores — Faturamento + Share</div>
+            <div class="chart-container" style="height: 220px;">
+                <canvas id="chart-dist-ranking-bar"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Positivação por Distribuidor (CNPJs)</div>
+            <div class="chart-container" style="height: 220px;">
+                <canvas id="chart-dist-positivacao-bar"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-users-viewfinder"></i> Ranking Supervisores</h3>
+        </div>
+        <div class="table-responsive-container">
+            <table class="premium-data-table" id="table-supervisores">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Supervisor</th>
+                        <th>Distribuidor</th>
+                        <th>Faturado (R$)</th>
+                        <th>Unidades</th>
+                        <th>Ticket Médio</th>
+                        <th>CNPJs</th>
+                        <th>SKUs Distintos</th>
+                        <th>Share %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Javascript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-briefcase"></i> Ranking Vendedores</h3>
+        </div>
+        <div class="table-responsive-container">
+            <table class="premium-data-table" id="table-vendedores">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Vendedor</th>
+                        <th>Faturado (R$)</th>
+                        <th>Unidades</th>
+                        <th>Ticket Médio</th>
+                        <th>CNPJs</th>
+                        <th>SKUs Distintos</th>
+                        <th>Share %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Javascript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Decisão Comercial (Comparador de filtros) -->
+<div id="tab-decisao_comercial" class="tab-content" style="display: none;">
+    <div style="margin-bottom: 1.5rem;" class="glass-panel">
+        <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 0.5rem;"><i class="fa-solid fa-shuffle"></i> Comparador Comercial de Bases</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem;">Escolha parâmetros de filtros diferentes em cada painel abaixo e clique em "Gerar Cruzamento" para comparar.</p>
+    </div>
+    
+    <div class="comparison-layout">
+        <!-- Base Padrão -->
+        <div class="comparison-panel primary">
+            <div class="comparison-title">Base Padrão — Filtro Superior</div>
+            <p style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 1.5rem;">
+                Esta base será a referência de comparação. De acordo com o filtro aplicado, ela contém CNPJ, Razão Social, Faturamento, Mix, Ticket Médio e Share %.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="filter-group">
+                    <label>Distribuidor</label>
+                    <select class="filter-select" id="comp-dist-1"><option>Todos</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Indústria</label>
+                    <select class="filter-select" id="comp-ind-1"><option>Todas</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Supervisor</label>
+                    <select class="filter-select" id="comp-sup-1"><option>Todos</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Produto</label>
+                    <select class="filter-select" id="comp-prod-1"><option>Todos</option></select>
+                </div>
+            </div>
+            
+            <div class="kpis-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                <div class="kpi-card" style="padding: 1rem;">
+                    <div class="kpi-title-row" style="font-size: 0.65rem;">CNPJs</div>
+                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-cnpj-1">0</div>
+                </div>
+                <div class="kpi-card" style="padding: 1rem;">
+                    <div class="kpi-title-row" style="font-size: 0.65rem;">Faturamento</div>
+                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-fat-1">R$ 0,00</div>
+                </div>
+                <div class="kpi-card" style="padding: 1rem;">
+                    <div class="kpi-title-row" style="font-size: 0.65rem;">Ticket Médio</div>
+                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-ticket-1">R$ 0,00</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Base Análise -->
+        <div class="comparison-panel secondary">
+            <div class="comparison-title">Base Análise — Filtro Secundário</div>
+            <p style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 1.5rem;">
+                Esta base entrará para cruzamento. Escolha o que quer comparar. As informações puxadas serão: Faturamento R$, Faturamento Unidades e Ticket Médio.
+            </p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="filter-group">
+                    <label>Distribuidor</label>
+                    <select class="filter-select" id="comp-dist-2"><option>Todos</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Indústria</label>
+                    <select class="filter-select" id="comp-ind-2"><option>Todas</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Supervisor</label>
+                    <select class="filter-select" id="comp-sup-2"><option>Todos</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Produto</label>
+                    <select class="filter-select" id="comp-prod-2"><option>Todos</option></select>
+                </div>
+            </div>
+            
+            <div class="kpis-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                <div class="kpi-card secondary" style="padding: 1rem;">
+                    <div class="kpi-title-row" style="font-size: 0.65rem;">CNPJs</div>
+                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-cnpj-2">0</div>
+                </div>
+                <div class="kpi-card secondary" style="padding: 1rem;">
+                    <div class="kpi-title-row" style="font-size: 0.65rem;">Faturamento</div>
+                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-fat-2">R$ 0,00</div>
+                </div>
+                <div class="kpi-card secondary" style="padding: 1rem;">
+                    <div class="kpi-title-row" style="font-size: 0.65rem;">Ticket Médio</div>
+                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-ticket-2">R$ 0,00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 2rem;">
+        <button class="btn" onclick="executeComparison()"><i class="fa-solid fa-bolt"></i> Gerar Cruzamento de Dados</button>
+    </div>
+</div>
+
+<!-- 6. Simulador de Ofertas -->
+<div id="tab-simulador_ofertas" class="tab-content" style="display: none;">
+    <div class="glass-panel" style="max-width: 800px; margin: 0 auto;">
+        <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 0.5rem;"><i class="fa-solid fa-tags"></i> Simulador de Ofertas & Descontos Comerciais</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 2rem;">Simule ofertas em massa e projete a elasticidade de faturamento de acordo com a margem.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="form-group">
+                <label>Desconto Proposto (%)</label>
+                <input type="number" class="form-input" placeholder="ex: 10" id="sim-desconto" value="5">
+            </div>
+            <div class="form-group">
+                <label>Projeção de Incremento Volumétrico (%)</label>
+                <input type="number" class="form-input" placeholder="ex: 15" id="sim-volume" value="12">
+            </div>
+        </div>
+        <button class="btn" onclick="runSimulation()">Calcular Projeção</button>
+        
+        <div id="simulation-result" style="margin-top: 2rem; display: none; padding: 1.5rem; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 0.5rem;">
+            <h4 style="font-family: 'Outfit', sans-serif; margin-bottom: 1rem; color: var(--success);"><i class="fa-solid fa-check"></i> Resultado da Projeção de Margem</h4>
+            <p style="font-size: 0.9rem; line-height: 1.6;" id="sim-text-result"></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Armazenamento de dados globais retornados para filtragem local rápida
+    let globalDataTables = {
+        clients: [],
+        products: []
+    };
+
+    // Gerenciador das sub-abas
+    function switchSubTab(tabName) {
+        document.querySelectorAll('.sub-tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+        
+        event.currentTarget.classList.add('active');
+        document.getElementById('tab-' + tabName).style.display = 'block';
+        
+        if (tabName === 'decisao_comercial') {
+            loadComparisonFilters();
+        }
+        
+        const filtersContainer = document.getElementById('filters-container');
+        if (tabName === 'decisao_comercial' || tabName === 'simulador_ofertas') {
+            filtersContainer.style.display = 'none';
+        } else {
+            filtersContainer.style.display = 'grid';
+        }
+    }
+
+    // Instâncias Globais dos Gráficos
+    let charts = {};
+
+    // Iniciar filtros da API ao carregar a página
+    document.addEventListener("DOMContentLoaded", function() {
+        loadFilters();
+    });
+
+    function loadFilters() {
+        fetch("/api/filters/{{ service }}")
+            .then(res => res.json())
+            .then(data => {
+                populateSelect("filter-industria", data.industrias, "Todas");
+                populateSelect("filter-distribuidor", data.distribuidores, "Todos");
+                populateSelect("filter-supervisor", data.supervisores, "Todos");
+                populateSelect("filter-vendedor", data.vendedores, "Todos");
+                populateSelect("filter-cliente", data.clientes, "Todos");
+                populateSelect("filter-uf", data.ufs, "Todas");
+                populateSelect("filter-ano", data.anos, "Todos");
+                populateSelect("filter-mes", data.meses, "Todos");
+                populateSelect("filter-produto", data.produtos, "Todos");
+                
+                loadDashboardData();
+            });
+    }
+
+    function populateSelect(id, list, defaultLabel) {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = `<option value="${defaultLabel}">${defaultLabel}</option>`;
+        list.forEach(item => {
+            select.innerHTML += `<option value="${item}">${item}</option>`;
+        });
+    }
+
+    function loadDashboardData() {
+        const filters = {
+            industria: document.getElementById("filter-industria").value,
+            distribuidor: document.getElementById("filter-distribuidor").value,
+            supervisor: document.getElementById("filter-supervisor").value,
+            vendedor: document.getElementById("filter-vendedor").value,
+            cliente: document.getElementById("filter-cliente").value,
+            uf: document.getElementById("filter-uf").value,
+            ano: document.getElementById("filter-ano").value,
+            mes: document.getElementById("filter-mes").value,
+            produto: document.getElementById("filter-produto").value
+        };
+
+        fetch("/api/data/{{ service }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(filters)
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Salvar para filtros em tabelas locais
+            globalDataTables.clients = data.tables.clients || [];
+            globalDataTables.products = data.tables.products || [];
+
+            // 1. Atualizar KPIs da aba Visão Geral
+            document.getElementById("kpi-faturamento").innerText = data.kpis.faturamento;
+            document.getElementById("kpi-unidades").innerText = data.kpis.unidades;
+            document.getElementById("kpi-ticket").innerText = data.kpis.ticket_medio;
+            document.getElementById("kpi-cnpjs").innerText = data.kpis.cnpjs;
+            
+            // 2. Atualizar KPIs da aba Clientes
+            document.getElementById("kpi-cli-top50").innerText = data.kpis.faturamento_top50;
+            document.getElementById("kpi-cli-cnpjs").innerText = data.kpis.cnpjs;
+            document.getElementById("kpi-cli-skus").innerText = data.kpis.skus_distinct.toLocaleString('pt-BR');
+            document.getElementById("kpi-cli-ticket").innerText = data.kpis.ticket_medio;
+            
+            // 3. Atualizar KPIs da aba Produtos
+            document.getElementById("kpi-prod-ticket").innerText = data.kpis.ticket_medio;
+            document.getElementById("kpi-prod-top20").innerText = data.kpis.faturamento_top20_skus;
+            document.getElementById("kpi-prod-cnpjs").innerText = data.kpis.cnpjs;
+            document.getElementById("kpi-prod-tri").innerText = `${data.kpis.skus_distinct.toLocaleString('pt-BR')} / ${data.kpis.unidades}`;
+            
+            // 4. Atualizar KPIs da aba Distribuidor
+            document.getElementById("kpi-dist-ticket").innerText = data.kpis.ticket_medio;
+            document.getElementById("kpi-dist-fat").innerText = data.kpis.faturamento;
+            document.getElementById("kpi-dist-cnpjs").innerText = data.kpis.cnpjs;
+            document.getElementById("kpi-dist-base").innerText = data.charts.distrib_labels.length;
+
+            // 5. Renderizar tabelas com formatação premium
+            renderClientesTable(globalDataTables.clients);
+            renderProdutosTable(globalDataTables.products);
+            renderSupervisorsTable(data.tables.supervisors || []);
+            renderVendedoresTable(data.tables.vendedores || []);
+
+            // 6. Desenhar todos os gráficos com base nos Anexos 2-5
+            renderVisaoGeralCharts(data.charts);
+            renderClientesCharts(data.charts);
+            renderProdutosCharts(data.charts);
+            renderDistribuidorCharts(data.charts);
+        });
+    }
+
+    // --- RENDERIZADORES DE TABELA ---
+    function renderClientesTable(list) {
+        const tbody = document.querySelector("#table-ranking-clientes tbody");
+        tbody.innerHTML = "";
+        list.forEach(c => {
+            let badgeClass = "badge-premium-low";
+            let badgeText = "Baixo";
+            if (c.mix >= 10) {
+                badgeClass = "badge-premium-high";
+                badgeText = "Alto";
+            } else if (c.mix >= 5) {
+                badgeClass = "badge-premium-med";
+                badgeText = "Médio";
+            }
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight: 700; color: var(--secondary);">#${c.rank}</td>
+                    <td>${c.cnpj}</td>
+                    <td style="font-weight: 600;">${c.razao_social}</td>
+                    <td style="color: var(--primary); font-weight: 700;">${c.uf}</td>
+                    <td style="font-weight: 600;">${c.faturamento}</td>
+                    <td>${c.unidades.toLocaleString('pt-BR')}</td>
+                    <td>${c.mix}</td>
+                    <td>${c.frequencia} meses</td>
+                    <td><span class="badge-premium ${badgeClass}">${badgeText}</span></td>
+                    <td>${c.ticket_medio}</td>
+                    <td>${c.share}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function filterClientesTable() {
+        const query = document.getElementById("search-clientes").value.toLowerCase();
+        const filtered = globalDataTables.clients.filter(c => 
+            c.cnpj.toLowerCase().includes(query) || c.razao_social.toLowerCase().includes(query)
+        );
+        renderClientesTable(filtered);
+    }
+
+    function renderProdutosTable(list) {
+        const tbody = document.querySelector("#table-ranking-produtos tbody");
+        tbody.innerHTML = "";
+        list.forEach(p => {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight: 700; color: var(--secondary);">#${p.rank}</td>
+                    <td>${p.ean}</td>
+                    <td style="font-weight: 600;">${p.material_desc}</td>
+                    <td style="color: var(--text-secondary);">${p.industria}</td>
+                    <td style="font-weight: 600;">${p.faturamento}</td>
+                    <td>${p.unidades.toLocaleString('pt-BR')}</td>
+                    <td>${(p.unidades/p.cnpjs).toFixed(1)}</td>
+                    <td>${p.cnpjs}</td>
+                    <td>${p.ticket_medio}</td>
+                    <td>${p.share}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function filterProdutosTable() {
+        const query = document.getElementById("search-produtos").value.toLowerCase();
+        const filtered = globalDataTables.products.filter(p => 
+            p.ean.toLowerCase().includes(query) || p.material_desc.toLowerCase().includes(query)
+        );
+        renderProdutosTable(filtered);
+    }
+
+    function renderSupervisorsTable(list) {
+        const tbody = document.querySelector("#table-supervisores tbody");
+        tbody.innerHTML = "";
+        list.forEach(s => {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight: 700; color: var(--secondary);">#${s.rank}</td>
+                    <td style="font-weight: 600;">${s.supervisor}</td>
+                    <td>${s.distribuidor}</td>
+                    <td style="font-weight: 600;">${s.faturamento}</td>
+                    <td>${s.unidades.toLocaleString('pt-BR')}</td>
+                    <td>${s.ticket_medio}</td>
+                    <td>${s.cnpjs}</td>
+                    <td>${s.skus}</td>
+                    <td>${s.share}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderVendedoresTable(list) {
+        const tbody = document.querySelector("#table-vendedores tbody");
+        tbody.innerHTML = "";
+        list.forEach(v => {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight: 700; color: var(--secondary);">#${v.rank}</td>
+                    <td style="font-weight: 600;">${v.vendedor}</td>
+                    <td style="font-weight: 600;">${v.faturamento}</td>
+                    <td>${v.unidades.toLocaleString('pt-BR')}</td>
+                    <td>${v.ticket_medio}</td>
+                    <td>${v.cnpjs}</td>
+                    <td>${v.skus}</td>
+                    <td>${v.share}</td>
+                </tr>
+            `;
+        });
+    }
+
+    // --- DESIGN DE GRÁFICOS DIVERSIFICADOS CONFORME ANEXOS ---
+
+    // 1. Gráficos da aba Visão Geral (Anexo 2)
+    function renderVisaoGeralCharts(chartData) {
+        // A. Faturamento Anual (Barra Única ou Comparativa se houver múltiplos anos)
+        if (charts.visaoFatAnual) charts.visaoFatAnual.destroy();
+        const ctxA = document.getElementById('chart-visao-faturamento-anual').getContext('2d');
+        charts.visaoFatAnual = new Chart(ctxA, {
+            type: 'bar',
+            data: {
+                labels: ['2026'],
+                datasets: [{
+                    label: 'Faturamento R$',
+                    data: [chartData.months_values.reduce((a, b) => a + b, 0)],
+                    backgroundColor: 'rgba(56, 161, 105, 0.65)',
+                    borderColor: '#38a169',
+                    borderWidth: 1,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+
+        // B. Positivação — CNPJs Distintos por Mês
+        if (charts.visaoPositivacao) charts.visaoPositivacao.destroy();
+        const ctxB = document.getElementById('chart-visao-positivacao-mes').getContext('2d');
+        charts.visaoPositivacao = new Chart(ctxB, {
+            type: 'bar',
+            data: {
+                labels: chartData.months_labels,
+                datasets: [{
+                    label: 'CNPJs Positivados',
+                    data: chartData.months_cnpjs,
+                    backgroundColor: 'rgba(0, 168, 255, 0.65)',
+                    borderColor: '#00a8ff',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+
+        // C. Linha do Tempo Jan-Dez — Faturamento R$
+        if (charts.visaoTendenciaGeral) charts.visaoTendenciaGeral.destroy();
+        const ctxC = document.getElementById('chart-visao-tendencia-geral').getContext('2d');
+        charts.visaoTendenciaGeral = new Chart(ctxC, {
+            type: 'line',
+            data: {
+                labels: chartData.months_labels,
+                datasets: [{
+                    label: 'Faturamento Mensal (R$)',
+                    data: chartData.months_values,
+                    borderColor: '#2b1bfb',
+                    backgroundColor: 'rgba(43, 27, 251, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.45
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+
+        // D. Unidades vs Faturamento R$ por Mês (Gráfico de colunas duplas)
+        if (charts.visaoUnidFat) charts.visaoUnidFat.destroy();
+        const ctxD = document.getElementById('chart-visao-unidades-fat-mes').getContext('2d');
+        charts.visaoUnidFat = new Chart(ctxD, {
+            type: 'bar',
+            data: {
+                labels: chartData.months_labels,
+                datasets: [
+                    {
+                        label: 'Unidades',
+                        data: chartData.months_units,
+                        backgroundColor: '#f97316',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Faturamento (x10)',
+                        data: chartData.months_values.map(v => v / 10), // Escalar para visualizar lado a lado
+                        backgroundColor: '#10b981',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#8f9cae' } } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+
+        // E. Ticket Médio Mês a Mês (Linha de pontos)
+        if (charts.visaoTicket) charts.visaoTicket.destroy();
+        const ctxE = document.getElementById('chart-visao-ticket-medio-mes').getContext('2d');
+        charts.visaoTicket = new Chart(ctxE, {
+            type: 'line',
+            data: {
+                labels: chartData.months_labels,
+                datasets: [{
+                    label: 'Ticket Médio R$',
+                    data: chartData.months_tickets,
+                    borderColor: '#f59e0b',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#fff',
+                    pointRadius: 6,
+                    fill: false,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+    }
+
+    // 2. Gráficos da aba Clientes (Anexo 3)
+    function renderClientesCharts(chartData) {
+        if (charts.clientesMulti) charts.clientesMulti.destroy();
+        const ctx = document.getElementById('chart-clientes-multiaxis').getContext('2d');
+        charts.clientesMulti = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.months_labels,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Faturamento R$',
+                        data: chartData.months_values,
+                        backgroundColor: 'rgba(99, 102, 241, 0.4)',
+                        borderColor: '#6366f1',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Unidades',
+                        data: chartData.months_units,
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Ticket Médio',
+                        data: chartData.months_tickets,
+                        borderColor: '#f59e0b',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#8f9cae' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#8f9cae' }
+                    },
+                    x: { ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+    }
+
+    // 3. Gráficos da aba Produtos (Anexo 4)
+    function renderProdutosCharts(chartData) {
+        if (charts.produtosMulti) charts.produtosMulti.destroy();
+        const ctx = document.getElementById('chart-produtos-multiaxis').getContext('2d');
+        charts.produtosMulti = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.months_labels,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Faturamento R$',
+                        data: chartData.months_values,
+                        backgroundColor: 'rgba(236, 72, 153, 0.3)',
+                        borderColor: '#ec4899',
+                        yAxisID: 'y'
+                    },
+                    {
+                        type: 'line',
+                        label: 'CNPJs Positivados',
+                        data: chartData.months_cnpjs,
+                        borderColor: '#3b82f6',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Unidades faturadas',
+                        data: chartData.months_units,
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#8f9cae' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#8f9cae' }
+                    },
+                    x: { ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+    }
+
+    // 4. Gráficos da aba Distribuidor (Anexo 5)
+    function renderDistribuidorCharts(chartData) {
+        // A. Linha do tempo multi eixo
+        if (charts.distribMulti) charts.distribMulti.destroy();
+        const ctxA = document.getElementById('chart-distribuidores-multiaxis').getContext('2d');
+        charts.distribMulti = new Chart(ctxA, {
+            type: 'bar',
+            data: {
+                labels: chartData.months_labels,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Faturamento R$',
+                        data: chartData.months_values,
+                        backgroundColor: 'rgba(0, 168, 255, 0.3)',
+                        borderColor: '#00a8ff',
+                        yAxisID: 'y'
+                    },
+                    {
+                        type: 'line',
+                        label: 'CNPJ Positivado',
+                        data: chartData.months_cnpjs,
+                        borderColor: '#10b981',
+                        fill: false,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        type: 'line',
+                        label: 'Ticket Médio',
+                        data: chartData.months_tickets,
+                        borderColor: '#f59e0b',
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#8f9cae' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#8f9cae' }
+                    },
+                    x: { ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+
+        // B. Ranking Distribuidores — Faturamento + Share
+        if (charts.distRanking) charts.distRanking.destroy();
+        const ctxB = document.getElementById('chart-dist-ranking-bar').getContext('2d');
+        charts.distRanking = new Chart(ctxB, {
+            type: 'bar',
+            data: {
+                labels: chartData.distrib_labels,
+                datasets: [{
+                    label: 'Faturamento R$',
+                    data: chartData.distrib_values,
+                    backgroundColor: '#6366f1',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    y: { grid: { display: false }, ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+
+        // C. Positivação por Distribuidor (CNPJs)
+        if (charts.distPositiv) charts.distPositiv.destroy();
+        const ctxC = document.getElementById('chart-dist-positivacao-bar').getContext('2d');
+        charts.distPositiv = new Chart(ctxC, {
+            type: 'bar',
+            data: {
+                labels: chartData.distrib_labels,
+                datasets: [{
+                    label: 'CNPJs Positivados',
+                    data: chartData.distrib_values.map(v => Math.round(v / 1000)), // Mock proporcional para renderizar
+                    backgroundColor: '#f97316',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
+                }
+            }
+        });
+    }
+
+    // Métodos para Comparação de Bases
+    function loadComparisonFilters() {
+        fetch("/api/filters/{{ service }}")
+            .then(res => res.json())
+            .then(data => {
+                ["1", "2"].forEach(suffix => {
+                    populateSelect("comp-dist-" + suffix, data.distribuidores, "Todos");
+                    populateSelect("comp-ind-" + suffix, data.industrias, "Todas");
+                    populateSelect("comp-sup-" + suffix, data.supervisores, "Todos");
+                    populateSelect("comp-prod-" + suffix, data.produtos, "Todos");
+                });
+            });
+    }
+
+    function executeComparison() {
+        const fetchBaseData = (suffix) => {
+            const filters = {
+                distribuidor: document.getElementById("comp-dist-" + suffix).value,
+                industria: document.getElementById("comp-ind-" + suffix).value,
+                supervisor: document.getElementById("comp-sup-" + suffix).value,
+                produto: document.getElementById("comp-prod-" + suffix).value
+            };
+            return fetch("/api/data/{{ service }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(filters)
+            }).then(res => res.json());
+        };
+
+        Promise.all([fetchBaseData("1"), fetchBaseData("2")])
+            .then(([res1, res2]) => {
+                document.getElementById("comp-kpi-cnpj-1").innerText = res1.kpis.cnpjs;
+                document.getElementById("comp-kpi-fat-1").innerText = res1.kpis.faturamento;
+                document.getElementById("comp-kpi-ticket-1").innerText = res1.kpis.ticket_medio;
+                
+                document.getElementById("comp-kpi-cnpj-2").innerText = res2.kpis.cnpjs;
+                document.getElementById("comp-kpi-fat-2").innerText = res2.kpis.faturamento;
+                document.getElementById("comp-kpi-ticket-2").innerText = res2.kpis.ticket_medio;
+            });
+    }
+
+    // Métodos do Simulador de Ofertas
+    function runSimulation() {
+        const desc = parseFloat(document.getElementById("sim-desconto").value) / 100;
+        const vol = parseFloat(document.getElementById("sim-volume").value) / 100;
+        
+        const fat_current = parseFloat(document.getElementById("kpi-faturamento").innerText.replace("R$ ", "").replaceAll(".", "").replace(",", "."));
+        
+        if (isNaN(fat_current) || fat_current === 0) {
+            alert("Carregue uma base com faturamento para simular.");
+            return;
+        }
+
+        const projected_fat = fat_current * (1 - desc) * (1 + vol);
+        const diff = projected_fat - fat_current;
+        const color = diff >= 0 ? "var(--success)" : "var(--danger)";
+        const label = diff >= 0 ? "Incremento positivo" : "Decréscimo (Elasticidade negativa)";
+
+        document.getElementById("simulation-result").style.display = "block";
+        document.getElementById("sim-text-result").innerHTML = `
+            Ao aplicar um desconto médio de <strong>${(desc*100).toFixed(1)}%</strong> e obter um aumento volumétrico de <strong>${(vol*100).toFixed(1)}%</strong>: <br><br>
+            • Faturamento Atual: <strong>R$ ${fat_current.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong><br>
+            • Faturamento Projetado: <strong>R$ ${projected_fat.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong><br>
+            • Impacto Financeiro: <span style="color: ${color}; font-weight:700;">R$ ${diff.toLocaleString('pt-BR', {minimumFractionDigits: 2})} (${label})</span>
+        `;
+    }
+</script>
+{% endblock %}

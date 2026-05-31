@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RepOn Inteligência Comercial{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Configuração Dinâmica de Cores do Cliente -->
+    <style>
+        :root {
+            --primary: {{ theme.primary_color|default('#6366f1') }};
+            --primary-glow: {{ theme.primary_color|default('#6366f1') }}26; /* Hex com 15% opacidade */
+            --secondary: {{ theme.secondary_color|default('#f97316') }};
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-section">
+                <img src="{{ theme.logo|default('/static/img/default_logo.png') }}" alt="Logo Cliente" onerror="this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
+                <div class="brand-info">
+                    <h2>{{ theme.client_name|default('RepOn') }}</h2>
+                    <p>INTELIGÊNCIA COMERCIAL</p>
+                </div>
+            </div>
+            
+            {% if theme.is_admin %}
+                <h3 class="menu-label">Administração</h3>
+                <ul class="menu-items" style="margin-bottom: 2rem;">
+                    <li class="menu-item {% if request.path == '/admin' %}active{% endif %}">
+                        <a href="{{ url_for('admin_dashboard') }}">
+                            <i class="fa-solid fa-chart-line"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="menu-item {% if '/admin/clients' in request.path %}active{% endif %}">
+                        <a href="{{ url_for('admin_clients') }}">
+                            <i class="fa-solid fa-building"></i> Clientes
+                        </a>
+                    </li>
+                    <li class="menu-item {% if '/admin/finance' in request.path %}active{% endif %}">
+                        <a href="{{ url_for('admin_finance') }}">
+                            <i class="fa-solid fa-money-bill-wave"></i> Financeiro
+                        </a>
+                    </li>
+                    <li class="menu-item {% if request.path == '/admin/upload' %}active{% endif %}">
+                        <a href="{{ url_for('admin_upload_page') }}">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+                        </a>
+                    </li>
+                </ul>
+            {% endif %}
+            
+            {% if not theme.is_admin or (theme.is_admin and theme.client_slug) %}
+                <h3 class="menu-label">Menu</h3>
+                <ul class="menu-items">
+                    <li class="menu-item {% if request.path == '/dashboard' %}active{% endif %}">
+                        <a href="{{ url_for('dashboard_home') }}">
+                            <i class="fa-solid fa-house"></i> Início
+                        </a>
+                    </li>
+                    
+                    {% if "Sell Out" in theme.enabled_services %}
+                        <li class="menu-item {% if '/dashboard/sell_out' in request.path %}active{% endif %}">
+                            <a href="{{ url_for('dashboard_page', service='sell_out') }}">
+                                <i class="fa-solid fa-cart-shopping"></i> Sell Out
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% if "Sell In" in theme.enabled_services %}
+                        <li class="menu-item {% if '/dashboard/sell_in' in request.path %}active{% endif %}">
+                            <a href="{{ url_for('dashboard_page', service='sell_in') }}">
+                                <i class="fa-solid fa-truck-ramp-box"></i> Sell In
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            {% endif %}
+            
+            <!-- Perfil / Rodapé -->
+            <div class="user-profile-section">
+                <div class="user-info-card">
+                    <div class="user-avatar">
+                        {{ theme.username[0]|upper if theme.username else 'U' }}
+                    </div>
+                    <div class="user-details">
+                        <h4>{{ theme.username }}</h4>
+                        <p>{{ theme.email }}</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Main Content Area -->
+        <main class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <ul class="flash-messages" style="margin-bottom: 1.5rem;">
+                        {% for category, message in messages %}
+                            <li class="flash-msg {{ category }}">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

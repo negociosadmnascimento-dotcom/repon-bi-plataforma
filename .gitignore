@@ -1,0 +1,26 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database
+*.db
+*.sqlite
+database.db
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# User uploads & data sets
+uploads/
+*.xlsx
+*.csv
+!test_sellout.xlsx # Se quiser manter apenas o teste, caso contrário ignorar todos
