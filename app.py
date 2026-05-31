@@ -8,11 +8,18 @@ from sqlalchemy import func, distinct, or_
 from models import get_engine, User, Client, SellOutRow, SellInRow, SubscriptionPayment, UploadHistory, init_db
 from data_parser import parse_excel_and_import
 
-# Inicializar Banco de dados
-init_db()
-
 app = Flask(__name__)
 app.secret_key = "lpl_repon_analytics_super_secret_key"
+
+# Inicializar Banco de dados apenas no primeiro request para evitar travar o carregamento do módulo serverless na Vercel
+@app.before_request
+def initialize_database():
+    # Remove o gancho para não rodar a cada requisição
+    app.before_request_funcs[None].remove(initialize_database)
+    try:
+        init_db()
+    except Exception as e:
+        print("Erro ao inicializar banco de dados:", str(e))
 
 # Pasta de upload compatível com caminhos relativos em ambientes serverless (Vercel)
 UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(app.root_path, 'uploads'))
