@@ -7,81 +7,203 @@
     <div class="header-title">
         <p style="font-weight: 700; color: var(--secondary);">ADMIN / UPLOAD</p>
         <h1 style="font-size: 2.2rem; font-weight: 800; font-family: 'Outfit', sans-serif;">Importador de Dados</h1>
-        <p>Faça o upload do arquivo Excel para alimentar o painel do cliente</p>
+        <p>Faça o upload e gerencie o histórico de arquivos do cliente</p>
     </div>
 </div>
 
-<div class="glass-panel" style="max-width: 800px; margin: 0 auto;">
-    <h3 style="font-family: 'Outfit'; margin-bottom: 1.5rem; font-weight:700;"><i class="fa-solid fa-cloud-arrow-up"></i> Configuração do Upload</h3>
-    
-    <form id="upload-form" enctype="multipart/form-data">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
-            <!-- Cliente Selector -->
-            <div class="form-group">
-                <label>1. Cliente Destino</label>
-                <select name="client_id" class="filter-select" style="background-color: rgba(10,13,20,0.8); height: 45px;" required>
+<!-- Alternador de Abas conforme o anexo -->
+<div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+    <button class="admin-tab-btn active" id="tab-btn-upload" onclick="switchUploadTab('new-upload')">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Novo Upload
+    </button>
+    <button class="admin-tab-btn" id="tab-btn-history" onclick="switchUploadTab('history-uploads')">
+        <i class="fa-solid fa-history"></i> Histórico
+    </button>
+</div>
+
+<!-- 1. ABA: Novo Upload -->
+<div id="section-new-upload" class="admin-tab-content active">
+    <div class="glass-panel" style="max-width: 800px; margin: 0 auto;">
+        <h3 style="font-family: 'Outfit'; margin-bottom: 1.5rem; font-weight:700;"><i class="fa-solid fa-cloud-arrow-up"></i> Configuração do Upload</h3>
+        
+        <form id="upload-form" enctype="multipart/form-data">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Cliente Selector -->
+                <div class="form-group">
+                    <label>1. Cliente Destino</label>
+                    <select name="client_id" class="filter-select" style="background-color: rgba(10,13,20,0.8); height: 45px;" required>
+                        {% for c in clients %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Tipo de dados toggle -->
+                <div class="form-group">
+                    <label>2. Tipo de Dados</label>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+                        <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; cursor: pointer; font-weight:600; background-color: rgba(255,255,255,0.02);" id="label-sellout">
+                            <input type="radio" name="data_type" value="Sell Out" checked style="accent-color: var(--primary);" onchange="updateRadioTheme()"> <i class="fa-solid fa-cart-shopping"></i> Sell Out
+                        </label>
+                        <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; cursor: pointer; font-weight:600; background-color: rgba(255,255,255,0.02);" id="label-sellin">
+                            <input type="radio" name="data_type" value="Sell In" style="accent-color: var(--primary);" onchange="updateRadioTheme()"> <i class="fa-solid fa-truck-ramp-box"></i> Sell In
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- File Drop Area -->
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <label>3. Selecione o arquivo de vendas</label>
+                <div style="border: 2px dashed var(--border-color); border-radius: 0.75rem; padding: 3rem; text-align: center; background: rgba(0,0,0,0.2); position: relative; cursor: pointer; transition: border-color 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border-color)'" ondrop="handleDrop(event)">
+                    <i class="fa-solid fa-file-excel" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                    <h4 style="font-family: 'Outfit'; margin-bottom: 0.5rem;">Escolha o arquivo ou arraste aqui</h4>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1.5rem;">Formatos aceitos: XLSX, XLS ou CSV (delimitador ponto e vírgula)</p>
+                    <input type="file" name="file" id="file-input" style="opacity: 0; position: absolute; top:0; left:0; width:100%; height:100%; cursor:pointer;" required onchange="showFilename(this)">
+                    <div id="selected-filename" style="margin-top: 1rem; font-weight: 700; color: var(--success); display: none;"></div>
+                </div>
+            </div>
+            
+            <!-- Barra de Progresso Real Time -->
+            <div id="progress-container" style="display: none; margin-bottom: 2rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem;">
+                    <span id="progress-status" style="font-weight: 700; color: var(--primary);">Preparando arquivo...</span>
+                    <span id="progress-percent" style="font-weight: 700;">0%</span>
+                </div>
+                <div style="width: 100%; height: 10px; background-color: rgba(255, 255, 255, 0.05); border-radius: 5px; overflow: hidden;">
+                    <div id="progress-bar" style="width: 0%; height: 100%; background-color: var(--primary); transition: width 0.3s ease; box-shadow: 0 0 10px var(--primary);"></div>
+                </div>
+                <div id="progress-stats" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); text-align: right;">
+                    Lendo registros...
+                </div>
+            </div>
+            
+            <button type="submit" id="submit-btn" class="btn" style="width: 100%; padding: 1rem;"><i class="fa-solid fa-cloud-arrow-up"></i> Iniciar Processamento dos Dados</button>
+        </form>
+        
+        <!-- Info Box: Colunas Obrigatórias -->
+        <div style="margin-top: 2.5rem; padding: 1.5rem; background: rgba(99, 102, 241, 0.03); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 0.5rem;">
+            <h4 style="font-family: 'Outfit'; margin-bottom: 0.75rem; color: var(--primary);"><i class="fa-solid fa-circle-info"></i> Colunas Obrigatórias do Arquivo Excel</h4>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; word-break: break-all;">
+                Certifique-se de que sua planilha contém as seguintes colunas (a caixa alta ou baixa não importa): <br>
+                <code>INDUSTRIA</code>, <code>DATA</code>, <code>CNPJ</code>, <code>RAZAO SOCIAL</code>, <code>ID SUPERVISOR</code>, <code>SUPERVISOR</code>, <code>ID VENDEDOR</code>, <code>VENDEDOR</code>, <code>UF</code>, <code>EAN</code>, <code>MATERIAL/DESC</code>, <code>UNID. FATURADA</code>, <code>VALOR FAT.</code>, <code>DISTRIBUIDOR</code>, <code>ANO</code>, <code>REDE</code>, <code>CLIENTE</code>, <code>STATUS OL</code>, <code>STATUS MANUAL</code>, <code>VALOR OL</code>, <code>SHARE %</code>, <code>MES</code>.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- 2. ABA: Histórico (Conforme Anexo) -->
+<div id="section-history-uploads" class="admin-tab-content" style="display: none;">
+    <div class="glass-panel" style="max-width: 1000px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="font-family: 'Outfit'; font-weight:700;"><i class="fa-solid fa-history"></i> Histórico de Uploads</h3>
+            <button class="btn btn-secondary" onclick="window.location.reload()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="filter-group" style="flex: 1;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">Filtrar por Cliente</label>
+                <select class="filter-select" id="filter-history-client" style="width:100%; height:42px;" onchange="filterHistoryTable()">
+                    <option value="Todos">Todos os clientes</option>
                     {% for c in clients %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    <option value="{{ c.name }}">{{ c.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            
-            <!-- Tipo de dados toggle -->
-            <div class="form-group">
-                <label>2. Tipo de Dados</label>
-                <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
-                    <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; cursor: pointer; font-weight:600; background-color: rgba(255,255,255,0.02);" id="label-sellout">
-                        <input type="radio" name="data_type" value="Sell Out" checked style="accent-color: var(--primary);" onchange="updateRadioTheme()"> <i class="fa-solid fa-cart-shopping"></i> Sell Out
-                    </label>
-                    <label style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 0.5rem; cursor: pointer; font-weight:600; background-color: rgba(255,255,255,0.02);" id="label-sellin">
-                        <input type="radio" name="data_type" value="Sell In" style="accent-color: var(--primary);" onchange="updateRadioTheme()"> <i class="fa-solid fa-truck-ramp-box"></i> Sell In
-                    </label>
-                </div>
+            <div class="filter-group" style="width: 200px;">
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">Módulo</label>
+                <select class="filter-select" id="filter-history-type" style="width:100%; height:42px;" onchange="filterHistoryTable()">
+                    <option value="Todos">Todos</option>
+                    <option value="Sell Out">Sell Out</option>
+                    <option value="Sell In">Sell In</option>
+                </select>
             </div>
         </div>
-        
-        <!-- File Drop Area -->
-        <div class="form-group" style="margin-bottom: 2rem;">
-            <label>3. Selecione o arquivo de vendas</label>
-            <div style="border: 2px dashed var(--border-color); border-radius: 0.75rem; padding: 3rem; text-align: center; background: rgba(0,0,0,0.2); position: relative; cursor: pointer; transition: border-color 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border-color)'" ondrop="handleDrop(event)">
-                <i class="fa-solid fa-file-excel" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-                <h4 style="font-family: 'Outfit'; margin-bottom: 0.5rem;">Escolha o arquivo ou arraste aqui</h4>
-                <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1.5rem;">Formatos aceitos: XLSX, XLS ou CSV (delimitador ponto e vírgula)</p>
-                <input type="file" name="file" id="file-input" style="opacity: 0; position: absolute; top:0; left:0; width:100%; height:100%; cursor:pointer;" required onchange="showFilename(this)">
-                <div id="selected-filename" style="margin-top: 1rem; font-weight: 700; color: var(--success); display: none;"></div>
-            </div>
+
+        <div class="table-card" style="padding:0; border:none; background:none;">
+            <table class="data-table" id="table-uploads-history">
+                <thead>
+                    <tr>
+                        <th>Arquivo</th>
+                        <th>Cliente</th>
+                        <th>Módulo</th>
+                        <th>Data do Upload</th>
+                        <th>Linhas</th>
+                        <th>Erros</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in history %}
+                    <tr data-client="{{ h.client_name }}" data-type="{{ h.data_type }}">
+                        <td style="font-weight:600; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <i class="fa-regular fa-file-excel" style="color:var(--success); margin-right: 0.5rem;"></i>{{ h.filename }}
+                        </td>
+                        <td style="font-weight:600; color: var(--primary);">{{ h.client_name }}</td>
+                        <td>
+                            <span class="badge badge-pending" style="background-color: rgba(99,102,241,0.1); color: var(--primary);">{{ h.data_type }}</span>
+                        </td>
+                        <td>{{ h.date }}</td>
+                        <td style="font-weight:600;">{{ h.rows }}</td>
+                        <td style="color:var(--success);"><i class="fa-solid fa-check"></i> 0</td>
+                        <td>
+                            <span class="badge {% if h.status == 'Concluído' %}badge-success{% else %}badge-danger{% endif %}">{{ h.status }}</span>
+                        </td>
+                        <td>
+                            <form action="{{ url_for('admin_delete_upload', history_id=h.id) }}" method="POST" onsubmit="return confirm('Deseja realmente excluir este upload do histórico? Isso apagará também todos os registros de faturamento deste upload no sistema para liberar memória.')">
+                                <button type="submit" class="logout-btn" style="padding: 0.35rem 0.6rem; font-size:0.75rem; background: rgba(239, 68, 68, 0.08);">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum histórico de upload registrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        
-        <!-- Barra de Progresso Real Time -->
-        <div id="progress-container" style="display: none; margin-bottom: 2rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem;">
-                <span id="progress-status" style="font-weight: 700; color: var(--primary);">Preparando arquivo...</span>
-                <span id="progress-percent" style="font-weight: 700;">0%</span>
-            </div>
-            <div style="width: 100%; height: 10px; background-color: rgba(255, 255, 255, 0.05); border-radius: 5px; overflow: hidden;">
-                <div id="progress-bar" style="width: 0%; height: 100%; background-color: var(--primary); transition: width 0.3s ease; box-shadow: 0 0 10px var(--primary);"></div>
-            </div>
-            <div id="progress-stats" style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); text-align: right;">
-                Lendo registros...
-            </div>
-        </div>
-        
-        <button type="submit" id="submit-btn" class="btn" style="width: 100%; padding: 1rem;"><i class="fa-solid fa-cloud-arrow-up"></i> Iniciar Processamento dos Dados</button>
-    </form>
-    
-    <!-- Info Box: Colunas Obrigatórias -->
-    <div style="margin-top: 2.5rem; padding: 1.5rem; background: rgba(99, 102, 241, 0.03); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 0.5rem;">
-        <h4 style="font-family: 'Outfit'; margin-bottom: 0.75rem; color: var(--primary);"><i class="fa-solid fa-circle-info"></i> Colunas Obrigatórias do Arquivo Excel</h4>
-        <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.6; word-break: break-all;">
-            Certifique-se de que sua planilha contém as seguintes colunas (a caixa alta ou baixa não importa): <br>
-            <code>INDUSTRIA</code>, <code>DATA</code>, <code>CNPJ</code>, <code>RAZAO SOCIAL</code>, <code>ID SUPERVISOR</code>, <code>SUPERVISOR</code>, <code>ID VENDEDOR</code>, <code>VENDEDOR</code>, <code>UF</code>, <code>EAN</code>, <code>MATERIAL/DESC</code>, <code>UNID. FATURADA</code>, <code>VALOR FAT.</code>, <code>DISTRIBUIDOR</code>, <code>ANO</code>, <code>REDE</code>, <code>CLIENTE</code>, <code>STATUS OL</code>, <code>STATUS MANUAL</code>, <code>VALOR OL</code>, <code>SHARE %</code>, <code>MES</code>.
-        </p>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    // Gerenciador de Abas de Upload
+    function switchUploadTab(tabId) {
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.admin-tab-content').forEach(section => section.classList.remove('active'));
+        
+        event.currentTarget.classList.add('active');
+        document.getElementById('section-' + tabId).classList.add('active');
+    }
+
+    // Filtrar tabela de Histórico localmente
+    function filterHistoryTable() {
+        const clientVal = document.getElementById("filter-history-client").value;
+        const typeVal = document.getElementById("filter-history-type").value;
+        
+        const rows = document.querySelectorAll("#table-uploads-history tbody tr");
+        rows.forEach(row => {
+            const clientAttr = row.getAttribute("data-client");
+            const typeAttr = row.getAttribute("data-type");
+            
+            if (!clientAttr) return; // ignora linha vazia
+            
+            const matchClient = (clientVal === "Todos" || clientAttr === clientVal);
+            const matchType = (typeVal === "Todos" || typeAttr === typeVal);
+            
+            if (matchClient && matchType) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+
     function updateRadioTheme() {
         const radios = document.getElementsByName("data_type");
         radios.forEach(radio => {

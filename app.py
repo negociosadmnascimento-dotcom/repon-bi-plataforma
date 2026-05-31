@@ -735,8 +735,43 @@ UPLOAD_PROGRESS = {}
 def admin_upload_page():
     db = get_db()
     clients = db.query(Client).filter_by(status="Ativo").all()
+    
+    # Buscar histórico completo de uploads
+    history = db.query(UploadHistory).order_by(UploadHistory.upload_date.desc()).all()
+    history_list = []
+    for h in history:
+        c = db.query(Client).filter_by(id=h.client_id).first()
+        history_list.append({
+            "id": h.id,
+            "filename": h.filename,
+            "client_name": c.name if c else "Desconhecido",
+            "date": h.upload_date.strftime("%d/%m/%Y, %H:%M"),
+            "data_type": h.data_type,
+            "rows": h.num_rows,
+            "status": h.status
+        })
+        
     db.close()
-    return render_template('admin/upload.html', clients=clients)
+    return render_template('admin/upload.html', clients=clients, history=history_list)
+
+@app.route('/admin/upload/delete/<int:history_id>', methods=['POST'])
+@admin_required
+def admin_delete_upload(history_id):
+    db = get_db()
+    history = db.query(UploadHistory).filter_by(id=history_id).first()
+    if history:
+        # Se for deletar o upload do histórico, deletamos também os registros da base correspondentes
+        # Mapeado por client_id e data_type
+        if history.data_type == "Sell Out":
+            db.query(SellOutRow).filter_by(client_id=history.client_id).delete()
+        else:
+            db.query(SellInRow).filter_by(client_id=history.client_id).delete()
+            
+        db.delete(history)
+        db.commit()
+        flash("Upload e registros associados deletados com sucesso!", "success")
+    db.close()
+    return redirect(url_for('admin_upload_page'))
 
 @app.route('/admin/upload/process', methods=['POST'])
 @admin_required
