@@ -750,7 +750,10 @@
     function renderClientesTable(list) {
         const tbody = document.querySelector("#table-ranking-clientes tbody");
         tbody.innerHTML = "";
-        list.forEach(c => {
+        let html = "";
+        const limit = 100;
+        const items = list.slice(0, limit);
+        items.forEach(c => {
             let badgeClass = "badge-premium-low";
             let badgeText = "Baixo";
             if (c.mix >= 10) {
@@ -760,7 +763,7 @@
                 badgeClass = "badge-premium-med";
                 badgeText = "Médio";
             }
-            tbody.innerHTML += `
+            html += `
                 <tr>
                     <td style="font-weight: 700; color: var(--secondary);">#${c.rank}</td>
                     <td>${c.cnpj}</td>
@@ -776,6 +779,7 @@
                 </tr>
             `;
         });
+        tbody.innerHTML = html;
     }
 
     function filterClientesTable() {
@@ -789,8 +793,11 @@
     function renderProdutosTable(list) {
         const tbody = document.querySelector("#table-ranking-produtos tbody");
         tbody.innerHTML = "";
-        list.forEach(p => {
-            tbody.innerHTML += `
+        let html = "";
+        const limit = 100;
+        const items = list.slice(0, limit);
+        items.forEach(p => {
+            html += `
                 <tr>
                     <td style="font-weight: 700; color: var(--secondary);">#${p.rank}</td>
                     <td>${p.ean}</td>
@@ -805,6 +812,7 @@
                 </tr>
             `;
         });
+        tbody.innerHTML = html;
     }
 
     function filterProdutosTable() {
@@ -818,8 +826,11 @@
     function renderSupervisorsTable(list) {
         const tbody = document.querySelector("#table-supervisores tbody");
         tbody.innerHTML = "";
-        list.forEach(s => {
-            tbody.innerHTML += `
+        let html = "";
+        const limit = 100;
+        const items = list.slice(0, limit);
+        items.forEach(s => {
+            html += `
                 <tr>
                     <td style="font-weight: 700; color: var(--secondary);">#${s.rank}</td>
                     <td style="font-weight: 600;">${s.supervisor}</td>
@@ -833,13 +844,17 @@
                 </tr>
             `;
         });
+        tbody.innerHTML = html;
     }
 
     function renderVendedoresTable(list) {
         const tbody = document.querySelector("#table-vendedores tbody");
         tbody.innerHTML = "";
-        list.forEach(v => {
-            tbody.innerHTML += `
+        let html = "";
+        const limit = 100;
+        const items = list.slice(0, limit);
+        items.forEach(v => {
+            html += `
                 <tr>
                     <td style="font-weight: 700; color: var(--secondary);">#${v.rank}</td>
                     <td style="font-weight: 600;">${v.vendedor}</td>
@@ -852,6 +867,7 @@
                 </tr>
             `;
         });
+        tbody.innerHTML = html;
     }
 
     // --- DESIGN DE GRÁFICOS DIVERSIFICADOS CONFORME ANEXOS ---
