@@ -43,9 +43,41 @@ def parse_excel_and_import(client_id, filepath, data_type, original_filename):
         for idx, row in df.iterrows():
             # Função auxiliar para pegar valor com segurança prevenindo NaN/NaT
             def val(col_name, default=None, is_num=False):
-                if col_name not in df.columns:
+                # Procurar nome exato ou alternativas comuns
+                alternatives = {
+                    "INDUSTRIA": ["INDUSTRIA", "INDÚSTRIA", "FABRICANTE", "MARCA"],
+                    "RAZAO SOCIAL": ["RAZAO SOCIAL", "RAZÃO SOCIAL", "RAZAO_SOCIAL", "NOME CLIENTE", "RAZÃO"],
+                    "SUPERVISOR": ["SUPERVISOR", "SUPERVISORES", "SUP"],
+                    "VENDEDOR": ["VENDEDOR", "VENDEDORES", "REPRESENTANTE"],
+                    "EAN": ["EAN", "COD_BARRAS", "CODIGO_BARRAS", "EAN/GTIN", "GTIN"],
+                    "MATERIAL/DESC": ["MATERIAL/DESC", "PRODUTO", "PRODUTOS", "DESCRICAO", "DESCRIÇÃO", "NOME PRODUTO", "NOME DO PRODUTO", "MATERIAL DESC", "MIX PADRAO", "MIX PADRÃO"],
+                    "UNID. FATURADA": ["UNID. FATURADA", "UNIDADES", "UNID", "QTD", "QUANTIDADE", "VOLUME"],
+                    "VALOR FAT.": ["VALOR FAT.", "VALOR FATURADO", "FATURAMENTO", "VALOR", "FAT", "VALOR LIQUIDO"],
+                    "DISTRIBUIDOR": ["DISTRIBUIDOR", "PARCEIRO", "DISTRIBUIDORES"],
+                    "ANO": ["ANO", "ANOS"],
+                    "MES": ["MES", "MÊS", "MESES", "SIGLA_MES"],
+                    "REDE": ["REDE", "REDES", "GRUPO"],
+                    "CLIENTE": ["CLIENTE", "CLIENTES", "NOME CLIENTE", "COD CLIENTE"]
+                }
+                
+                target_cols = alternatives.get(col_name, [col_name])
+                actual_col = None
+                for c in target_cols:
+                    if c in df.columns:
+                        actual_col = c
+                        break
+                
+                if actual_col is None:
+                    # Tentar busca aproximada se não achou exato nas alternativas
+                    for c in df.columns:
+                        if c.replace("_", " ").replace("/", " ").strip() in [t.replace("_", " ").replace("/", " ").strip() for t in target_cols]:
+                            actual_col = c
+                            break
+                            
+                if actual_col is None:
                     return default
-                val_raw = row[col_name]
+                    
+                val_raw = row[actual_col]
                 if pd.isna(val_raw):
                     return default
                 if is_num:

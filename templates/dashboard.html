@@ -42,8 +42,13 @@
         color: var(--text-primary);
     }
     
-    .premium-data-table tr:hover td {
-        background-color: rgba(255,255,255,0.02);
+    .premium-data-table tbody tr {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    
+    .premium-data-table tbody tr:hover td {
+        background-color: rgba(255, 255, 255, 0.05);
     }
     
     .badge-premium {
@@ -481,14 +486,20 @@
     <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-users-viewfinder"></i> Ranking Supervisores</h3>
-            <div class="dropdown-premium" style="position: relative;">
-                <button class="btn-icon" onclick="toggleDropdown('drop-supervisors')" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer;">
-                    <i class="fa-solid fa-ellipsis-vertical"></i>
-                </button>
-                <div id="drop-supervisors" class="dropdown-menu-premium" style="display: none; position: absolute; right: 0; top: 110%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100; min-width: 150px;">
-                    <a href="#" onclick="exportToExcel('table-supervisores', 'supervisores')" style="display: block; padding: 0.5rem 1rem; color: #fff; text-decoration: none; font-size: 0.85rem; border-radius: 0.5rem;">
-                        <i class="fa-solid fa-file-excel" style="color: var(--success); margin-right: 0.5rem;"></i> Exportar Excel
-                    </a>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="search-bar-premium">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                    <input type="text" id="search-supervisores" placeholder="Buscar por supervisor..." oninput="filterSupervisorsTable()">
+                </div>
+                <div class="dropdown-premium" style="position: relative;">
+                    <button class="btn-icon" onclick="toggleDropdown('drop-supervisors')" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                    <div id="drop-supervisors" class="dropdown-menu-premium" style="display: none; position: absolute; right: 0; top: 110%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100; min-width: 150px;">
+                        <a href="#" onclick="exportToExcel('table-supervisores', 'supervisores')" style="display: block; padding: 0.5rem 1rem; color: #fff; text-decoration: none; font-size: 0.85rem; border-radius: 0.5rem;">
+                            <i class="fa-solid fa-file-excel" style="color: var(--success); margin-right: 0.5rem;"></i> Exportar Excel
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -517,14 +528,20 @@
     <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-briefcase"></i> Ranking Vendedores</h3>
-            <div class="dropdown-premium" style="position: relative;">
-                <button class="btn-icon" onclick="toggleDropdown('drop-vendedores')" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer;">
-                    <i class="fa-solid fa-ellipsis-vertical"></i>
-                </button>
-                <div id="drop-vendedores" class="dropdown-menu-premium" style="display: none; position: absolute; right: 0; top: 110%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100; min-width: 150px;">
-                    <a href="#" onclick="exportToExcel('table-vendedores', 'vendedores')" style="display: block; padding: 0.5rem 1rem; color: #fff; text-decoration: none; font-size: 0.85rem; border-radius: 0.5rem;">
-                        <i class="fa-solid fa-file-excel" style="color: var(--success); margin-right: 0.5rem;"></i> Exportar Excel
-                    </a>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="search-bar-premium">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                    <input type="text" id="search-vendedores" placeholder="Buscar por vendedor..." oninput="filterVendedoresTable()">
+                </div>
+                <div class="dropdown-premium" style="position: relative;">
+                    <button class="btn-icon" onclick="toggleDropdown('drop-vendedores')" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                    <div id="drop-vendedores" class="dropdown-menu-premium" style="display: none; position: absolute; right: 0; top: 110%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100; min-width: 150px;">
+                        <a href="#" onclick="exportToExcel('table-vendedores', 'vendedores')" style="display: block; padding: 0.5rem 1rem; color: #fff; text-decoration: none; font-size: 0.85rem; border-radius: 0.5rem;">
+                            <i class="fa-solid fa-file-excel" style="color: var(--success); margin-right: 0.5rem;"></i> Exportar Excel
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -926,6 +943,42 @@
         });
     }
 
+    // --- DYNAMIC CLICK FILTERS ---
+    function applyDynamicFilter(filterId, value) {
+        const select = document.getElementById(filterId);
+        if (!select) return;
+        
+        let found = false;
+        // Escape characters for values if needed, check exact match
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === value || select.options[i].text === value) {
+                select.value = select.options[i].value;
+                found = true;
+                break;
+            }
+        }
+        
+        // Partial case-insensitive fallback matching
+        if (!found) {
+            const lowerVal = value.toLowerCase().trim();
+            for (let i = 0; i < select.options.length; i++) {
+                const optText = select.options[i].text.toLowerCase().trim();
+                const optVal = select.options[i].value.toLowerCase().trim();
+                if (optText.includes(lowerVal) || optVal.includes(lowerVal)) {
+                    select.value = select.options[i].value;
+                    found = true;
+                    break;
+                }
+            }
+        }
+        
+        if (found) {
+            loadDashboardData();
+            // Scroll to filters
+            document.getElementById('filters-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
     // --- RENDERIZADORES DE TABELA ---
     function renderClientesTable(list) {
         const tbody = document.querySelector("#table-ranking-clientes tbody");
@@ -944,7 +997,7 @@
                 badgeText = "Médio";
             }
             html += `
-                <tr>
+                <tr onclick="applyDynamicFilter('filter-cliente', '${c.razao_social.replace(/'/g, "\\'")}')">
                     <td style="font-weight: 700; color: var(--secondary);">#${c.rank}</td>
                     <td>${c.cnpj}</td>
                     <td style="font-weight: 600;">${c.razao_social}</td>
@@ -978,7 +1031,7 @@
         const items = list.slice(0, limit);
         items.forEach(p => {
             html += `
-                <tr>
+                <tr onclick="applyDynamicFilter('filter-produto', '${p.material_desc.replace(/'/g, "\\'")}')">
                     <td style="font-weight: 700; color: var(--secondary);">#${p.rank}</td>
                     <td>${p.ean}</td>
                     <td style="font-weight: 600;">${p.material_desc}</td>
@@ -1011,7 +1064,7 @@
         const items = list.slice(0, limit);
         items.forEach(s => {
             html += `
-                <tr>
+                <tr onclick="applyDynamicFilter('filter-supervisor', '${s.supervisor.replace(/'/g, "\\'")}')">
                     <td style="font-weight: 700; color: var(--secondary);">#${s.rank}</td>
                     <td style="font-weight: 600;">${s.supervisor}</td>
                     <td>${s.distribuidor}</td>
@@ -1027,6 +1080,14 @@
         tbody.innerHTML = html;
     }
 
+    function filterSupervisorsTable() {
+        const query = document.getElementById("search-supervisores").value.toLowerCase();
+        const filtered = globalDataTables.supervisors.filter(s => 
+            s.supervisor.toLowerCase().includes(query) || s.distribuidor.toLowerCase().includes(query)
+        );
+        renderSupervisorsTable(filtered);
+    }
+
     function renderVendedoresTable(list) {
         const tbody = document.querySelector("#table-vendedores tbody");
         tbody.innerHTML = "";
@@ -1035,7 +1096,7 @@
         const items = list.slice(0, limit);
         items.forEach(v => {
             html += `
-                <tr>
+                <tr onclick="applyDynamicFilter('filter-vendedor', '${v.vendedor.replace(/'/g, "\\'")}')">
                     <td style="font-weight: 700; color: var(--secondary);">#${v.rank}</td>
                     <td style="font-weight: 600;">${v.vendedor}</td>
                     <td style="font-weight: 600;">${v.faturamento}</td>
@@ -1048,6 +1109,14 @@
             `;
         });
         tbody.innerHTML = html;
+    }
+
+    function filterVendedoresTable() {
+        const query = document.getElementById("search-vendedores").value.toLowerCase();
+        const filtered = globalDataTables.vendedores.filter(v => 
+            v.vendedor.toLowerCase().includes(query)
+        );
+        renderVendedoresTable(filtered);
     }
 
     // --- AUXILIAR PARA COR EM DEGRADÊ ---
@@ -1065,7 +1134,7 @@
         align: 'top',
         color: '#fff',
         offset: 2,
-        font: { weight: 'bold', size: 9 },
+        font: { weight: 'bold', size: 11 },
         formatter: function(value, context) {
             if (!value) return '';
             let label = context.dataset.label || '';
@@ -1256,6 +1325,7 @@
         if (charts.clientesMulti) charts.clientesMulti.destroy();
         const ctx = document.getElementById('chart-clientes-multiaxis').getContext('2d');
         const gradC1 = createColGradient(ctx, 'rgba(99, 102, 241, 0.95)', 'rgba(99, 102, 241, 0.15)');
+        const gradC2 = createColGradient(ctx, 'rgba(16, 185, 129, 0.95)', 'rgba(16, 185, 129, 0.15)');
         charts.clientesMulti = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -1268,20 +1338,20 @@
                         backgroundColor: gradC1,
                         borderColor: '#6366f1',
                         borderWidth: 1.5,
+                        borderRadius: 4,
                         yAxisID: 'y',
                         datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 })
                     },
                     {
-                        type: 'line',
+                        type: 'bar',
                         label: 'Unidades',
                         data: chartData.months_units,
+                        backgroundColor: gradC2,
                         borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.04)',
-                        borderWidth: 5,
-                        pointRadius: 4,
-                        fill: true,
+                        borderWidth: 1.5,
+                        borderRadius: 4,
                         yAxisID: 'y1',
-                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 8 })
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 })
                     },
                     {
                         type: 'line',
@@ -1293,7 +1363,7 @@
                         pointRadius: 4,
                         fill: true,
                         yAxisID: 'y1',
-                        datalabels: Object.assign({}, dlOptions, { align: 'bottom', anchor: 'start', offset: 8 })
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 8 })
                     }
                 ]
             },
@@ -1327,6 +1397,7 @@
         if (charts.produtosMulti) charts.produtosMulti.destroy();
         const ctx = document.getElementById('chart-produtos-multiaxis').getContext('2d');
         const gradP1 = createColGradient(ctx, 'rgba(236, 72, 153, 0.95)', 'rgba(236, 72, 153, 0.15)');
+        const gradP2 = createColGradient(ctx, 'rgba(16, 185, 129, 0.95)', 'rgba(16, 185, 129, 0.15)');
         charts.produtosMulti = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -1339,7 +1410,19 @@
                         backgroundColor: gradP1,
                         borderColor: '#ec4899',
                         borderWidth: 1.5,
+                        borderRadius: 4,
                         yAxisID: 'y',
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 })
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Unidades faturadas',
+                        data: chartData.months_units,
+                        backgroundColor: gradP2,
+                        borderColor: '#10b981',
+                        borderWidth: 1.5,
+                        borderRadius: 4,
+                        yAxisID: 'y1',
                         datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 })
                     },
                     {
@@ -1353,18 +1436,6 @@
                         fill: true,
                         yAxisID: 'y1',
                         datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 8 })
-                    },
-                    {
-                        type: 'line',
-                        label: 'Unidades faturadas',
-                        data: chartData.months_units,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.04)',
-                        borderWidth: 5,
-                        pointRadius: 4,
-                        fill: true,
-                        yAxisID: 'y1',
-                        datalabels: Object.assign({}, dlOptions, { align: 'bottom', anchor: 'start', offset: 8 })
                     }
                 ]
             },
@@ -1399,6 +1470,7 @@
         if (charts.distribMulti) charts.distribMulti.destroy();
         const ctxA = document.getElementById('chart-distribuidores-multiaxis').getContext('2d');
         const gradD = createColGradient(ctxA, 'rgba(0, 168, 255, 0.95)', 'rgba(0, 168, 255, 0.15)');
+        const gradD2 = createColGradient(ctxA, 'rgba(16, 185, 129, 0.95)', 'rgba(16, 185, 129, 0.15)');
         charts.distribMulti = new Chart(ctxA, {
             type: 'bar',
             data: {
@@ -1411,20 +1483,20 @@
                         backgroundColor: gradD,
                         borderColor: '#00a8ff',
                         borderWidth: 1.5,
+                        borderRadius: 4,
                         yAxisID: 'y',
                         datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 })
                     },
                     {
-                        type: 'line',
+                        type: 'bar',
                         label: 'CNPJ Positivado',
                         data: chartData.months_cnpjs,
+                        backgroundColor: gradD2,
                         borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.04)',
-                        borderWidth: 5,
-                        pointRadius: 4,
-                        fill: true,
+                        borderWidth: 1.5,
+                        borderRadius: 4,
                         yAxisID: 'y1',
-                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 8 })
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 })
                     },
                     {
                         type: 'line',
@@ -1436,7 +1508,7 @@
                         pointRadius: 4,
                         fill: true,
                         yAxisID: 'y1',
-                        datalabels: Object.assign({}, dlOptions, { align: 'bottom', anchor: 'start', offset: 8 })
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 8 })
                     }
                 ]
             },
