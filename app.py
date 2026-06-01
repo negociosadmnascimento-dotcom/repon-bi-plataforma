@@ -272,7 +272,7 @@ def api_data(service):
     total_unidades = total_unidades or 0.0
     cnpjs_positivados = cnpjs_positivados or 0
     total_skus_distinct = total_skus_distinct or 0
-    ticket_medio = total_fat / total_unidades if total_unidades > 0 else 0.0
+    ticket_medio = total_fat / cnpjs_positivados if cnpjs_positivados > 0 else 0.0
 
     # 2. Histórico de Faturamento por Mês
     monthly_query = db.query(
@@ -462,7 +462,7 @@ def api_data(service):
             "faturamento_raw": total_fat,
             "unidades": f"{int(total_unidades):,}".replace(",", "."),
             "ticket_medio": f"R$ {ticket_medio:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            "cnpjs": cnpjs_positivados,
+            "cnpjs": f"{int(cnpjs_positivados):,}".replace(",", "."),
             "skus_distinct": total_skus_distinct
         },
         "charts": {

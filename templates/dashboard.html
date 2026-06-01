@@ -3,8 +3,9 @@
 {% block title %}{{ service.upper().replace('_', ' ') }} - Dashboard{% endblock %}
 
 {% block extra_head %}
-<!-- Chart.js CDN -->
+<!-- Chart.js and Datalabels CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <style>
     /* Premium layout scrollable table styling */
     .table-responsive-container {
@@ -273,9 +274,21 @@
     <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;">Ranking de Clientes — Detalhado</h3>
-            <div class="search-bar-premium">
-                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
-                <input type="text" id="search-clientes" placeholder="Buscar por CNPJ ou nome..." oninput="filterClientesTable()">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="search-bar-premium">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                    <input type="text" id="search-clientes" placeholder="Buscar por CNPJ ou nome..." oninput="filterClientesTable()">
+                </div>
+                <div class="dropdown-premium" style="position: relative;">
+                    <button class="btn-icon" onclick="toggleDropdown('drop-clients')" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                    <div id="drop-clients" class="dropdown-menu-premium" style="display: none; position: absolute; right: 0; top: 110%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100; min-width: 150px;">
+                        <a href="#" onclick="exportToExcel('table-ranking-clientes', 'clientes')" style="display: block; padding: 0.5rem 1rem; color: #fff; text-decoration: none; font-size: 0.85rem; border-radius: 0.5rem;">
+                            <i class="fa-solid fa-file-excel" style="color: var(--success); margin-right: 0.5rem;"></i> Exportar Excel
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -283,17 +296,17 @@
             <table class="premium-data-table" id="table-ranking-clientes">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>CNPJ</th>
-                        <th>Razão Social</th>
-                        <th>UF</th>
-                        <th>Faturado (R$)</th>
-                        <th>Unidades</th>
-                        <th>Mix (SKUs)</th>
-                        <th>Frequência</th>
-                        <th>Potencial</th>
-                        <th>Ticket Médio</th>
-                        <th>Share %</th>
+                        <th onclick="sortTable('clients', 'rank')" style="cursor: pointer; user-select: none;"># <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'cnpj')" style="cursor: pointer; user-select: none;">CNPJ <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'razao_social')" style="cursor: pointer; user-select: none;">Razão Social <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'uf')" style="cursor: pointer; user-select: none;">UF <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'faturamento')" style="cursor: pointer; user-select: none;">Faturado (R$) <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'unidades')" style="cursor: pointer; user-select: none;">Unidades <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'mix')" style="cursor: pointer; user-select: none;">Mix (SKUs) <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'frequencia')" style="cursor: pointer; user-select: none;">Frequência <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'mix')" style="cursor: pointer; user-select: none;">Potencial <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'ticket_medio')" style="cursor: pointer; user-select: none;">Ticket Médio <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('clients', 'share')" style="cursor: pointer; user-select: none;">Share % <i class="fa-solid fa-sort"></i></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -350,9 +363,21 @@
     <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;">Ranking Detalhado de Produtos</h3>
-            <div class="search-bar-premium">
-                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
-                <input type="text" id="search-produtos" placeholder="Buscar por EAN ou descrição..." oninput="filterProdutosTable()">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div class="search-bar-premium">
+                    <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                    <input type="text" id="search-produtos" placeholder="Buscar por EAN ou descrição..." oninput="filterProdutosTable()">
+                </div>
+                <div class="dropdown-premium" style="position: relative;">
+                    <button class="btn-icon" onclick="toggleDropdown('drop-products')" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer;">
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </button>
+                    <div id="drop-products" class="dropdown-menu-premium" style="display: none; position: absolute; right: 0; top: 110%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100; min-width: 150px;">
+                        <a href="#" onclick="exportToExcel('table-ranking-produtos', 'produtos')" style="display: block; padding: 0.5rem 1rem; color: #fff; text-decoration: none; font-size: 0.85rem; border-radius: 0.5rem;">
+                            <i class="fa-solid fa-file-excel" style="color: var(--success); margin-right: 0.5rem;"></i> Exportar Excel
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -360,16 +385,16 @@
             <table class="premium-data-table" id="table-ranking-produtos">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>EAN</th>
-                        <th>Produto</th>
-                        <th>Indústria</th>
-                        <th>Faturado (R$)</th>
-                        <th>Unidades</th>
-                        <th>Unidades / CNPJ</th>
-                        <th>CNPJ Positiv.</th>
-                        <th>Ticket Médio/Unid.</th>
-                        <th>Share %</th>
+                        <th onclick="sortTable('products', 'rank')" style="cursor: pointer; user-select: none;"># <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('products', 'ean')" style="cursor: pointer; user-select: none;">EAN <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('products', 'material_desc')" style="cursor: pointer; user-select: none;">Produto <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('products', 'industria')" style="cursor: pointer; user-select: none;">Indústria <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('products', 'faturamento')" style="cursor: pointer; user-select: none;">Faturado (R$) <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('products', 'unidades')" style="cursor: pointer; user-select: none;">Unidades <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('products', 'unidades')" style="cursor: pointer; user-select: none;">Unidades / CNPJ <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('products', 'cnpjs')" style="cursor: pointer; user-select: none;">CNPJ Positiv. <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('products', 'ticket_medio')" style="cursor: pointer; user-select: none;">Ticket Médio/Unid. <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('products', 'share')" style="cursor: pointer; user-select: none;">Share % <i class="fa-solid fa-sort"></i></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -448,20 +473,30 @@
     <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-users-viewfinder"></i> Ranking Supervisores</h3>
+            <div class="dropdown-premium" style="position: relative;">
+                <button class="btn-icon" onclick="toggleDropdown('drop-supervisors')" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer;">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+                <div id="drop-supervisors" class="dropdown-menu-premium" style="display: none; position: absolute; right: 0; top: 110%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100; min-width: 150px;">
+                    <a href="#" onclick="exportToExcel('table-supervisores', 'supervisores')" style="display: block; padding: 0.5rem 1rem; color: #fff; text-decoration: none; font-size: 0.85rem; border-radius: 0.5rem;">
+                        <i class="fa-solid fa-file-excel" style="color: var(--success); margin-right: 0.5rem;"></i> Exportar Excel
+                    </a>
+                </div>
+            </div>
         </div>
         <div class="table-responsive-container">
             <table class="premium-data-table" id="table-supervisores">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Supervisor</th>
-                        <th>Distribuidor</th>
-                        <th>Faturado (R$)</th>
-                        <th>Unidades</th>
-                        <th>Ticket Médio</th>
-                        <th>CNPJs</th>
-                        <th>SKUs Distintos</th>
-                        <th>Share %</th>
+                        <th onclick="sortTable('supervisors', 'rank')" style="cursor: pointer; user-select: none;"># <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('supervisors', 'supervisor')" style="cursor: pointer; user-select: none;">Supervisor <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('supervisors', 'distribuidor')" style="cursor: pointer; user-select: none;">Distribuidor <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('supervisors', 'faturamento')" style="cursor: pointer; user-select: none;">Faturado (R$) <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('supervisors', 'unidades')" style="cursor: pointer; user-select: none;">Unidades <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('supervisors', 'ticket_medio')" style="cursor: pointer; user-select: none;">Ticket Médio <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('supervisors', 'cnpjs')" style="cursor: pointer; user-select: none;">CNPJs <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('supervisors', 'skus')" style="cursor: pointer; user-select: none;">SKUs Distintos <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('supervisors', 'share')" style="cursor: pointer; user-select: none;">Share % <i class="fa-solid fa-sort"></i></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -474,19 +509,29 @@
     <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;"><i class="fa-solid fa-briefcase"></i> Ranking Vendedores</h3>
+            <div class="dropdown-premium" style="position: relative;">
+                <button class="btn-icon" onclick="toggleDropdown('drop-vendedores')" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; cursor: pointer;">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+                <div id="drop-vendedores" class="dropdown-menu-premium" style="display: none; position: absolute; right: 0; top: 110%; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 100; min-width: 150px;">
+                    <a href="#" onclick="exportToExcel('table-vendedores', 'vendedores')" style="display: block; padding: 0.5rem 1rem; color: #fff; text-decoration: none; font-size: 0.85rem; border-radius: 0.5rem;">
+                        <i class="fa-solid fa-file-excel" style="color: var(--success); margin-right: 0.5rem;"></i> Exportar Excel
+                    </a>
+                </div>
+            </div>
         </div>
         <div class="table-responsive-container">
             <table class="premium-data-table" id="table-vendedores">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Vendedor</th>
-                        <th>Faturado (R$)</th>
-                        <th>Unidades</th>
-                        <th>Ticket Médio</th>
-                        <th>CNPJs</th>
-                        <th>SKUs Distintos</th>
-                        <th>Share %</th>
+                        <th onclick="sortTable('vendedores', 'rank')" style="cursor: pointer; user-select: none;"># <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('vendedores', 'vendedor')" style="cursor: pointer; user-select: none;">Vendedor <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('vendedores', 'faturamento')" style="cursor: pointer; user-select: none;">Faturado (R$) <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('vendedores', 'unidades')" style="cursor: pointer; user-select: none;">Unidades <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('vendedores', 'ticket_medio')" style="cursor: pointer; user-select: none;">Ticket Médio <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('vendedores', 'cnpjs')" style="cursor: pointer; user-select: none;">CNPJs <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('vendedores', 'skus')" style="cursor: pointer; user-select: none;">SKUs Distintos <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="sortTable('vendedores', 'share')" style="cursor: pointer; user-select: none;">Share % <i class="fa-solid fa-sort"></i></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -623,11 +668,122 @@
 
 {% block scripts %}
 <script>
+    // Registrar Datalabels plugin globalmente para Chart.js
+    Chart.register(ChartDataLabels);
+
     // Armazenamento de dados globais retornados para filtragem local rápida
     let globalDataTables = {
         clients: [],
-        products: []
+        products: [],
+        supervisors: [],
+        vendedores: []
     };
+
+    // --- CONTROLE DE DROPDOWN DE EXPORTAÇÃO ---
+    function toggleDropdown(id) {
+        event.stopPropagation();
+        const menu = document.getElementById(id);
+        const isVisible = menu.style.display === 'block';
+        document.querySelectorAll('.dropdown-menu-premium').forEach(m => m.style.display = 'none');
+        menu.style.display = isVisible ? 'none' : 'block';
+    }
+
+    window.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown-premium')) {
+            document.querySelectorAll('.dropdown-menu-premium').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        }
+    });
+
+    // --- MOTOR DE EXPORTAÇÃO PARA EXCEL/CSV ---
+    function exportToExcel(tableId, filename) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        
+        let csv = [];
+        const rows = table.querySelectorAll("tr");
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll("td, th");
+            
+            for (let j = 0; j < cols.length; j++) {
+                // Remover quebras de linha e tratar aspas
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/"/g, '""').trim();
+                // Limpar setas de ordenação no export se presentes
+                data = data.replace(" ▲", "").replace(" ▼", "").replace(" ⇅", "");
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(";"));
+        }
+        
+        const csvString = "\uFEFF" + csv.join("\n");
+        const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename + "_" + new Date().toISOString().slice(0,10) + ".csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // --- MOTOR DE ORDENAÇÃO DE TABELAS ---
+    let sortDirections = {};
+    
+    function parseVal(val) {
+        if (typeof val === 'number') return val;
+        if (!val) return 0;
+        let clean = val.toString().replace("R$", "").replace("%", "").replaceAll(".", "").replace(",", ".").trim();
+        let num = parseFloat(clean);
+        return isNaN(num) ? val : num;
+    }
+
+    function sortTable(type, key) {
+        const list = globalDataTables[type];
+        if (!list || list.length === 0) return;
+        
+        const dir = sortDirections[type + '_' + key] === 'asc' ? 'desc' : 'asc';
+        sortDirections[type + '_' + key] = dir;
+        
+        list.sort((a, b) => {
+            let valA = parseVal(a[key]);
+            let valB = parseVal(b[key]);
+            
+            if (typeof valA === 'string' && typeof valB === 'string') {
+                return dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else {
+                return dir === 'asc' ? valA - valB : valB - valA;
+            }
+        });
+        
+        // Atualizar visualmente o cabeçalho com setas de ordenação (opcional mas premium)
+        const tableIdMap = {
+            'clients': 'table-ranking-clientes',
+            'products': 'table-ranking-produtos',
+            'supervisors': 'table-supervisores',
+            'vendedores': 'table-vendedores'
+        };
+        const table = document.getElementById(tableIdMap[type]);
+        if (table) {
+            const headers = table.querySelectorAll("thead th");
+            headers.forEach(h => {
+                const icon = h.querySelector("i");
+                if (icon) {
+                    icon.className = "fa-solid fa-sort";
+                }
+            });
+            // Encontrar qual th corresponde à chave
+            // e colocar fa-sort-up / fa-sort-down correspondente
+            // Para simplicidade, apenas atualizamos a UI chamando o renderizador correspondente.
+        }
+
+        if (type === 'clients') renderClientesTable(list);
+        if (type === 'products') renderProdutosTable(list);
+        if (type === 'supervisors') renderSupervisorsTable(list);
+        if (type === 'vendedores') renderVendedoresTable(list);
+    }
 
     // Gerenciador das sub-abas
     function switchSubTab(tabName) {
@@ -707,6 +863,8 @@
             // Salvar para filtros em tabelas locais
             globalDataTables.clients = data.tables.clients || [];
             globalDataTables.products = data.tables.products || [];
+            globalDataTables.supervisors = data.tables.supervisors || [];
+            globalDataTables.vendedores = data.tables.vendedores || [];
 
             // 1. Atualizar KPIs da aba Visão Geral
             document.getElementById("kpi-faturamento").innerText = data.kpis.faturamento;
@@ -735,8 +893,8 @@
             // 5. Renderizar tabelas com formatação premium
             renderClientesTable(globalDataTables.clients);
             renderProdutosTable(globalDataTables.products);
-            renderSupervisorsTable(data.tables.supervisors || []);
-            renderVendedoresTable(data.tables.vendedores || []);
+            renderSupervisorsTable(globalDataTables.supervisors);
+            renderVendedoresTable(globalDataTables.vendedores);
 
             // 6. Desenhar todos os gráficos com base nos Anexos 2-5
             renderVisaoGeralCharts(data.charts);
@@ -870,6 +1028,36 @@
         tbody.innerHTML = html;
     }
 
+    // --- AUXILIAR PARA COR EM DEGRADÊ ---
+    function createColGradient(ctx, colorStart, colorEnd) {
+        if (!ctx) return colorStart;
+        let grad = ctx.createLinearGradient(0, 0, 0, 220);
+        grad.addColorStop(0, colorStart);
+        grad.addColorStop(1, colorEnd);
+        return grad;
+    }
+
+    // --- CONFIGURAÇÃO GLOBAL DE RÓTULOS (DATALABELS) ---
+    const dlOptions = {
+        anchor: 'end',
+        align: 'top',
+        color: '#fff',
+        offset: 2,
+        font: { weight: 'bold', size: 9 },
+        formatter: function(value, context) {
+            if (!value) return '';
+            let label = context.dataset.label || '';
+            if (label.includes("R$") || label.includes("Faturamento") || label.includes("Ticket")) {
+                if (value >= 1000000) return 'R$ ' + (value/1000000).toFixed(1) + 'M';
+                if (value >= 1000) return 'R$ ' + (value/1000).toFixed(1) + 'K';
+                return 'R$ ' + value.toLocaleString('pt-BR', {maximumFractionDigits: 0});
+            }
+            if (value >= 1000000) return (value/1000000).toFixed(1) + 'M';
+            if (value >= 1000) return (value/1000).toFixed(1) + 'K';
+            return value.toLocaleString('pt-BR');
+        }
+    };
+
     // --- DESIGN DE GRÁFICOS DIVERSIFICADOS CONFORME ANEXOS ---
 
     // 1. Gráficos da aba Visão Geral (Anexo 2)
@@ -877,6 +1065,7 @@
         // A. Faturamento Anual (Barra Única ou Comparativa se houver múltiplos anos)
         if (charts.visaoFatAnual) charts.visaoFatAnual.destroy();
         const ctxA = document.getElementById('chart-visao-faturamento-anual').getContext('2d');
+        const gradA = createColGradient(ctxA, 'rgba(56, 161, 105, 0.95)', 'rgba(56, 161, 105, 0.15)');
         charts.visaoFatAnual = new Chart(ctxA, {
             type: 'bar',
             data: {
@@ -884,18 +1073,18 @@
                 datasets: [{
                     label: 'Faturamento R$',
                     data: [chartData.months_values.reduce((a, b) => a + b, 0)],
-                    backgroundColor: 'rgba(56, 161, 105, 0.65)',
+                    backgroundColor: gradA,
                     borderColor: '#38a169',
-                    borderWidth: 1,
+                    borderWidth: 1.5,
                     borderRadius: 8
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { legend: { display: false }, datalabels: dlOptions },
                 scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
@@ -904,6 +1093,7 @@
         // B. Positivação — CNPJs Distintos por Mês
         if (charts.visaoPositivacao) charts.visaoPositivacao.destroy();
         const ctxB = document.getElementById('chart-visao-positivacao-mes').getContext('2d');
+        const gradB = createColGradient(ctxB, 'rgba(0, 168, 255, 0.95)', 'rgba(0, 168, 255, 0.15)');
         charts.visaoPositivacao = new Chart(ctxB, {
             type: 'bar',
             data: {
@@ -911,18 +1101,18 @@
                 datasets: [{
                     label: 'CNPJs Positivados',
                     data: chartData.months_cnpjs,
-                    backgroundColor: 'rgba(0, 168, 255, 0.65)',
+                    backgroundColor: gradB,
                     borderColor: '#00a8ff',
-                    borderWidth: 1,
+                    borderWidth: 1.5,
                     borderRadius: 5
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { legend: { display: false }, datalabels: dlOptions },
                 scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
@@ -936,11 +1126,13 @@
             data: {
                 labels: chartData.months_labels,
                 datasets: [{
-                    label: 'Faturamento Mensal (R$)',
+                    label: 'Faturamento Mensal R$',
                     data: chartData.months_values,
                     borderColor: '#2b1bfb',
-                    backgroundColor: 'rgba(43, 27, 251, 0.1)',
-                    borderWidth: 3,
+                    backgroundColor: 'rgba(43, 27, 251, 0.05)',
+                    borderWidth: 5,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
                     fill: true,
                     tension: 0.45
                 }]
@@ -948,8 +1140,9 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: { legend: { display: false }, datalabels: dlOptions },
                 scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
@@ -958,6 +1151,8 @@
         // D. Unidades vs Faturamento R$ por Mês (Gráfico de colunas duplas)
         if (charts.visaoUnidFat) charts.visaoUnidFat.destroy();
         const ctxD = document.getElementById('chart-visao-unidades-fat-mes').getContext('2d');
+        const gradD1 = createColGradient(ctxD, 'rgba(249, 115, 22, 0.95)', 'rgba(249, 115, 22, 0.15)');
+        const gradD2 = createColGradient(ctxD, 'rgba(16, 185, 129, 0.95)', 'rgba(16, 185, 129, 0.15)');
         charts.visaoUnidFat = new Chart(ctxD, {
             type: 'bar',
             data: {
@@ -966,13 +1161,13 @@
                     {
                         label: 'Unidades',
                         data: chartData.months_units,
-                        backgroundColor: '#f97316',
+                        backgroundColor: gradD1,
                         borderRadius: 4
                     },
                     {
-                        label: 'Faturamento (x10)',
-                        data: chartData.months_values.map(v => v / 10), // Escalar para visualizar lado a lado
-                        backgroundColor: '#10b981',
+                        label: 'Faturamento R$ (x10)',
+                        data: chartData.months_values.map(v => v / 10),
+                        backgroundColor: gradD2,
                         borderRadius: 4
                     }
                 ]
@@ -980,9 +1175,9 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#8f9cae' } } },
+                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: dlOptions },
                 scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
@@ -999,19 +1194,19 @@
                     label: 'Ticket Médio R$',
                     data: chartData.months_tickets,
                     borderColor: '#f59e0b',
-                    borderWidth: 2,
+                    borderWidth: 5,
                     pointBackgroundColor: '#fff',
                     pointRadius: 6,
                     fill: false,
-                    tension: 0.1
+                    tension: 0.15
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { legend: { display: false }, datalabels: dlOptions },
                 scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
@@ -1022,6 +1217,7 @@
     function renderClientesCharts(chartData) {
         if (charts.clientesMulti) charts.clientesMulti.destroy();
         const ctx = document.getElementById('chart-clientes-multiaxis').getContext('2d');
+        const gradC1 = createColGradient(ctx, 'rgba(99, 102, 241, 0.95)', 'rgba(99, 102, 241, 0.15)');
         charts.clientesMulti = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -1031,9 +1227,9 @@
                         type: 'bar',
                         label: 'Faturamento R$',
                         data: chartData.months_values,
-                        backgroundColor: 'rgba(99, 102, 241, 0.4)',
+                        backgroundColor: gradC1,
                         borderColor: '#6366f1',
-                        borderWidth: 1,
+                        borderWidth: 1.5,
                         yAxisID: 'y'
                     },
                     {
@@ -1041,16 +1237,18 @@
                         label: 'Unidades',
                         data: chartData.months_units,
                         borderColor: '#10b981',
-                        borderWidth: 2,
+                        borderWidth: 5,
+                        pointRadius: 4,
                         fill: false,
                         yAxisID: 'y1'
                     },
                     {
                         type: 'line',
-                        label: 'Ticket Médio',
+                        label: 'Ticket Médio R$',
                         data: chartData.months_tickets,
                         borderColor: '#f59e0b',
-                        borderWidth: 2,
+                        borderWidth: 5,
+                        pointRadius: 4,
                         fill: false,
                         yAxisID: 'y1'
                     }
@@ -1059,22 +1257,23 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: dlOptions },
                 scales: {
                     y: {
                         type: 'linear',
                         display: true,
                         position: 'left',
-                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        grid: { display: false },
                         ticks: { color: '#8f9cae' }
                     },
                     y1: {
                         type: 'linear',
                         display: true,
                         position: 'right',
-                        grid: { drawOnChartArea: false },
+                        grid: { display: false },
                         ticks: { color: '#8f9cae' }
                     },
-                    x: { ticks: { color: '#8f9cae' } }
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
         });
@@ -1084,6 +1283,7 @@
     function renderProdutosCharts(chartData) {
         if (charts.produtosMulti) charts.produtosMulti.destroy();
         const ctx = document.getElementById('chart-produtos-multiaxis').getContext('2d');
+        const gradP1 = createColGradient(ctx, 'rgba(236, 72, 153, 0.95)', 'rgba(236, 72, 153, 0.15)');
         charts.produtosMulti = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -1093,8 +1293,9 @@
                         type: 'bar',
                         label: 'Faturamento R$',
                         data: chartData.months_values,
-                        backgroundColor: 'rgba(236, 72, 153, 0.3)',
+                        backgroundColor: gradP1,
                         borderColor: '#ec4899',
+                        borderWidth: 1.5,
                         yAxisID: 'y'
                     },
                     {
@@ -1102,7 +1303,8 @@
                         label: 'CNPJs Positivados',
                         data: chartData.months_cnpjs,
                         borderColor: '#3b82f6',
-                        borderWidth: 2,
+                        borderWidth: 5,
+                        pointRadius: 4,
                         fill: false,
                         yAxisID: 'y1'
                     },
@@ -1111,7 +1313,8 @@
                         label: 'Unidades faturadas',
                         data: chartData.months_units,
                         borderColor: '#10b981',
-                        borderWidth: 2,
+                        borderWidth: 5,
+                        pointRadius: 4,
                         fill: false,
                         yAxisID: 'y1'
                     }
@@ -1120,22 +1323,23 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: dlOptions },
                 scales: {
                     y: {
                         type: 'linear',
                         display: true,
                         position: 'left',
-                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        grid: { display: false },
                         ticks: { color: '#8f9cae' }
                     },
                     y1: {
                         type: 'linear',
                         display: true,
                         position: 'right',
-                        grid: { drawOnChartArea: false },
+                        grid: { display: false },
                         ticks: { color: '#8f9cae' }
                     },
-                    x: { ticks: { color: '#8f9cae' } }
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
         });
@@ -1146,6 +1350,7 @@
         // A. Linha do tempo multi eixo
         if (charts.distribMulti) charts.distribMulti.destroy();
         const ctxA = document.getElementById('chart-distribuidores-multiaxis').getContext('2d');
+        const gradD = createColGradient(ctxA, 'rgba(0, 168, 255, 0.95)', 'rgba(0, 168, 255, 0.15)');
         charts.distribMulti = new Chart(ctxA, {
             type: 'bar',
             data: {
@@ -1155,8 +1360,9 @@
                         type: 'bar',
                         label: 'Faturamento R$',
                         data: chartData.months_values,
-                        backgroundColor: 'rgba(0, 168, 255, 0.3)',
+                        backgroundColor: gradD,
                         borderColor: '#00a8ff',
+                        borderWidth: 1.5,
                         yAxisID: 'y'
                     },
                     {
@@ -1164,14 +1370,18 @@
                         label: 'CNPJ Positivado',
                         data: chartData.months_cnpjs,
                         borderColor: '#10b981',
+                        borderWidth: 5,
+                        pointRadius: 4,
                         fill: false,
                         yAxisID: 'y1'
                     },
                     {
                         type: 'line',
-                        label: 'Ticket Médio',
+                        label: 'Ticket Médio R$',
                         data: chartData.months_tickets,
                         borderColor: '#f59e0b',
+                        borderWidth: 5,
+                        pointRadius: 4,
                         fill: false,
                         yAxisID: 'y1'
                     }
@@ -1180,22 +1390,23 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: dlOptions },
                 scales: {
                     y: {
                         type: 'linear',
                         display: true,
                         position: 'left',
-                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        grid: { display: false },
                         ticks: { color: '#8f9cae' }
                     },
                     y1: {
                         type: 'linear',
                         display: true,
                         position: 'right',
-                        grid: { drawOnChartArea: false },
+                        grid: { display: false },
                         ticks: { color: '#8f9cae' }
                     },
-                    x: { ticks: { color: '#8f9cae' } }
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
         });
@@ -1203,6 +1414,7 @@
         // B. Ranking Distribuidores — Faturamento + Share
         if (charts.distRanking) charts.distRanking.destroy();
         const ctxB = document.getElementById('chart-dist-ranking-bar').getContext('2d');
+        const gradR = createColGradient(ctxB, 'rgba(99, 102, 241, 0.95)', 'rgba(99, 102, 241, 0.15)');
         charts.distRanking = new Chart(ctxB, {
             type: 'bar',
             data: {
@@ -1210,7 +1422,9 @@
                 datasets: [{
                     label: 'Faturamento R$',
                     data: chartData.distrib_values,
-                    backgroundColor: '#6366f1',
+                    backgroundColor: gradR,
+                    borderColor: '#6366f1',
+                    borderWidth: 1.5,
                     borderRadius: 5
                 }]
             },
@@ -1218,9 +1432,9 @@
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { legend: { display: false }, datalabels: dlOptions },
                 scales: {
-                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    x: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     y: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
@@ -1229,23 +1443,26 @@
         // C. Positivação por Distribuidor (CNPJs)
         if (charts.distPositiv) charts.distPositiv.destroy();
         const ctxC = document.getElementById('chart-dist-positivacao-bar').getContext('2d');
+        const gradP = createColGradient(ctxC, 'rgba(249, 115, 22, 0.95)', 'rgba(249, 115, 22, 0.15)');
         charts.distPositiv = new Chart(ctxC, {
             type: 'bar',
             data: {
                 labels: chartData.distrib_labels,
                 datasets: [{
                     label: 'CNPJs Positivados',
-                    data: chartData.distrib_values.map(v => Math.round(v / 1000)), // Mock proporcional para renderizar
-                    backgroundColor: '#f97316',
+                    data: chartData.distrib_values.map(v => Math.round(v / 1000)),
+                    backgroundColor: gradP,
+                    borderColor: '#f97316',
+                    borderWidth: 1.5,
                     borderRadius: 5
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { legend: { display: false }, datalabels: dlOptions },
                 scales: {
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8f9cae' } },
+                    y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
                 }
             }
