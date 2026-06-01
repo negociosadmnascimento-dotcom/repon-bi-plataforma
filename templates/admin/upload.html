@@ -94,73 +94,81 @@
 
 <!-- 2. ABA: Histórico (Conforme Anexo) -->
 <div id="section-history-uploads" class="admin-tab-content" style="display: none;">
-    <div class="glass-panel" style="max-width: 1000px; margin: 0 auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h3 style="font-family: 'Outfit'; font-weight:700;"><i class="fa-solid fa-history"></i> Histórico de Uploads</h3>
-            <button class="btn btn-secondary" onclick="window.location.reload()"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+    <div class="glass-panel" style="max-width: 1000px; margin: 0 auto; padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+            <h3 style="font-family: 'Outfit'; font-weight:700; font-size:1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-folder-open" style="color: var(--secondary);"></i> HISTÓRICO DE UPLOADS
+            </h3>
+            <button class="btn btn-secondary" onclick="window.location.reload()" style="padding: 0.5rem 1rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.25rem;">
+                <i class="fa-solid fa-rotate"></i> Atualizar
+            </button>
         </div>
 
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-            <div class="filter-group" style="flex: 1;">
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">Filtrar por Cliente</label>
-                <select class="filter-select" id="filter-history-client" style="width:100%; height:42px;" onchange="filterHistoryTable()">
+        <!-- Filtros do Histórico Conforme Anexo 2 -->
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 2rem; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 1.25rem; border-radius: 0.75rem;">
+            <div class="filter-group" style="flex: 1; min-width: 200px;">
+                <label style="font-size:0.7rem; font-weight:700; color:var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Cliente</label>
+                <select class="filter-select" id="filter-history-client" style="width:100%; height:40px;" onchange="filterHistoryTable()">
                     <option value="Todos">Todos os clientes</option>
                     {% for c in clients %}
                     <option value="{{ c.name }}">{{ c.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="filter-group" style="width: 200px;">
-                <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">Módulo</label>
-                <select class="filter-select" id="filter-history-type" style="width:100%; height:42px;" onchange="filterHistoryTable()">
-                    <option value="Todos">Todos</option>
-                    <option value="Sell Out">Sell Out</option>
-                    <option value="Sell In">Sell In</option>
-                </select>
+            <div class="filter-group" style="width: 180px;">
+                <label style="font-size:0.7rem; font-weight:700; color:var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Data de</label>
+                <input type="date" class="form-input" id="filter-history-date-from" style="width:100%; height:40px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem; border-radius: 0.5rem;" onchange="filterHistoryTable()">
             </div>
+            <div class="filter-group" style="width: 180px;">
+                <label style="font-size:0.7rem; font-weight:700; color:var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Data até</label>
+                <input type="date" class="form-input" id="filter-history-date-to" style="width:100%; height:40px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 0.5rem; border-radius: 0.5rem;" onchange="filterHistoryTable()">
+            </div>
+            <button class="btn btn-secondary" onclick="clearFilters()" style="height: 40px; padding: 0 1.25rem; display: flex; align-items: center; gap: 0.25rem; background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.2); color: var(--danger);">
+                <i class="fa-solid fa-xmark"></i> Limpar filtros
+            </button>
         </div>
 
-        <div class="table-card" style="padding:0; border:none; background:none;">
-            <table class="data-table" id="table-uploads-history">
+        <div class="table-responsive-container" style="border: 1px solid var(--border-color); border-radius: 0.5rem; overflow: hidden;">
+            <table class="premium-data-table" id="table-uploads-history" style="width:100%; border-collapse: collapse;">
                 <thead>
-                    <tr>
-                        <th>Arquivo</th>
-                        <th>Cliente</th>
-                        <th>Módulo</th>
-                        <th>Data do Upload</th>
-                        <th>Linhas</th>
-                        <th>Erros</th>
-                        <th>Status</th>
-                        <th>Ações</th>
+                    <tr style="border-bottom: 2px solid var(--border-color);">
+                        <th style="padding: 1rem;">Arquivo</th>
+                        <th style="padding: 1rem;">Cliente</th>
+                        <th style="padding: 1rem;">Data</th>
+                        <th style="padding: 1rem; text-align: center;">Linhas</th>
+                        <th style="padding: 1rem; text-align: center;">Erros</th>
+                        <th style="padding: 1rem; text-align: center;">Status</th>
+                        <th style="padding: 1rem; text-align: center;">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for h in history %}
-                    <tr data-client="{{ h.client_name }}" data-type="{{ h.data_type }}">
-                        <td style="font-weight:600; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            <i class="fa-regular fa-file-excel" style="color:var(--success); margin-right: 0.5rem;"></i>{{ h.filename }}
+                    <tr data-client="{{ h.client_name }}" style="border-bottom: 1px solid rgba(255,255,255,0.02);">
+                        <td style="padding: 1rem; font-weight:600; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <i class="fa-regular fa-file" style="color:var(--text-muted); margin-right: 0.5rem;"></i>{{ h.filename }}
                         </td>
-                        <td style="font-weight:600; color: var(--primary);">{{ h.client_name }}</td>
-                        <td>
-                            <span class="badge badge-pending" style="background-color: rgba(99,102,241,0.1); color: var(--primary);">{{ h.data_type }}</span>
+                        <td style="padding: 1rem; font-weight:600; color: #00a8ff;">{{ h.client_name }}</td>
+                        <td style="padding: 1rem; color: var(--text-secondary);">{{ h.date }}</td>
+                        <td style="padding: 1rem; font-weight:700; text-align: center;">{{ "{:,}".format(h.rows).replace(",", ".") }}</td>
+                        <td style="padding: 1rem; text-align: center; color:var(--success); font-weight: 700;">
+                            <i class="fa-solid fa-check"></i> 0
                         </td>
-                        <td>{{ h.date }}</td>
-                        <td style="font-weight:600;">{{ h.rows }}</td>
-                        <td style="color:var(--success);"><i class="fa-solid fa-check"></i> 0</td>
-                        <td>
-                            <span class="badge {% if h.status == 'Concluído' %}badge-success{% else %}badge-danger{% endif %}">{{ h.status }}</span>
+                        <td style="padding: 1rem; text-align: center;">
+                            <span class="badge-premium {% if h.status == 'Concluído' %}badge-premium-high{% else %}badge-premium-low{% endif %}">
+                                {{ h.status }}
+                            </span>
                         </td>
-                        <td>
-                            <form action="{{ url_for('admin_delete_upload', history_id=h.id) }}" method="POST" onsubmit="return confirm('Deseja realmente excluir este upload do histórico? Isso apagará também todos os registros de faturamento deste upload no sistema para liberar memória.')">
-                                <button type="submit" class="logout-btn" style="padding: 0.35rem 0.6rem; font-size:0.75rem; background: rgba(239, 68, 68, 0.08);">
-                                    <i class="fa-solid fa-trash"></i>
+                        <td style="padding: 1rem; text-align: center;">
+                            <form action="{{ url_for('admin_delete_upload', history_id=h.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Deseja realmente excluir este upload do histórico? Isso apagará também todos os registros de faturamento deste upload no sistema para liberar memória.')">
+                                <button type="submit" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; transition: 0.2s;">
+                                    <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </form>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhum histórico de upload registrado.</td>
+                        <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 3rem;">Nenhum histórico de upload registrado.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -181,27 +189,54 @@
         document.getElementById('section-' + tabId).classList.add('active');
     }
 
-    // Filtrar tabela de Histórico localmente
+    // Auxiliar para parsing da data exibida ("DD/MM/YYYY, HH:MM" -> Objeto Date)
+    function parseTableDate(dateStr) {
+        if (!dateStr) return null;
+        const parts = dateStr.split(",");
+        const dateParts = parts[0].trim().split("/");
+        if (dateParts.length === 3) {
+            return new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+        }
+        return null;
+    }
+
+    // Filtrar tabela de Histórico localmente com Cliente e Intervalo de Datas (Anexo 2)
     function filterHistoryTable() {
         const clientVal = document.getElementById("filter-history-client").value;
-        const typeVal = document.getElementById("filter-history-type").value;
+        const dateFromVal = document.getElementById("filter-history-date-from").value;
+        const dateToVal = document.getElementById("filter-history-date-to").value;
+        
+        const dateFrom = dateFromVal ? new Date(dateFromVal + "T00:00:00") : null;
+        const dateTo = dateToVal ? new Date(dateToVal + "T23:59:59") : null;
         
         const rows = document.querySelectorAll("#table-uploads-history tbody tr");
         rows.forEach(row => {
             const clientAttr = row.getAttribute("data-client");
-            const typeAttr = row.getAttribute("data-type");
+            const dateCell = row.querySelector("td:nth-child(3)");
+            if (!clientAttr || !dateCell) return;
             
-            if (!clientAttr) return; // ignora linha vazia
+            const rowDate = parseTableDate(dateCell.innerText);
             
             const matchClient = (clientVal === "Todos" || clientAttr === clientVal);
-            const matchType = (typeVal === "Todos" || typeAttr === typeVal);
+            let matchDate = true;
+            if (rowDate) {
+                if (dateFrom && rowDate < dateFrom) matchDate = false;
+                if (dateTo && rowDate > dateTo) matchDate = false;
+            }
             
-            if (matchClient && matchType) {
+            if (matchClient && matchDate) {
                 row.style.display = "";
             } else {
                 row.style.display = "none";
             }
         });
+    }
+
+    function clearFilters() {
+        document.getElementById("filter-history-client").value = "Todos";
+        document.getElementById("filter-history-date-from").value = "";
+        document.getElementById("filter-history-date-to").value = "";
+        filterHistoryTable();
     }
 
     function updateRadioTheme() {
