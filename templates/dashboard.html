@@ -102,53 +102,61 @@
     </div>
 </div>
 
-<!-- Sub-Abas do Dashboard -->
-<div class="sub-tabs-container">
-    <div class="sub-tab active" onclick="switchSubTab('visao_geral')">Visão Geral</div>
-    <div class="sub-tab" onclick="switchSubTab('clientes')">Clientes</div>
-    <div class="sub-tab" onclick="switchSubTab('produtos')">Produtos</div>
-    <div class="sub-tab" onclick="switchSubTab('distribuidor')">Distribuidor</div>
-    <div class="sub-tab" onclick="switchSubTab('decisao_comercial')">Decisão Comercial</div>
-    <div class="sub-tab" onclick="switchSubTab('simulador_ofertas')">Simulador de Ofertas <span style="background-color: var(--secondary); color:#fff; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:700;">EM TESTE</span></div>
-</div>
+<!-- Sticky Header (Sub-Tabs and Filters) -->
+<div class="sticky-header-container">
+    <!-- Sub-Abas do Dashboard -->
+    <div class="sub-tabs-container">
+        <div class="sub-tab active" onclick="switchSubTab('visao_geral')">Visão Geral</div>
+        <div class="sub-tab" onclick="switchSubTab('clientes')">Clientes</div>
+        <div class="sub-tab" onclick="switchSubTab('produtos')">Produtos</div>
+        <div class="sub-tab" onclick="switchSubTab('distribuidor')">Distribuidor</div>
+        <div class="sub-tab" onclick="switchSubTab('decisao_comercial')">Decisão Comercial</div>
+        <div class="sub-tab" onclick="switchSubTab('simulador_ofertas')">Simulador de Ofertas <span style="background-color: var(--secondary); color:#fff; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:700;">EM TESTE</span></div>
+    </div>
 
-<!-- Filtros Gerais -->
-<div class="filters-bar" id="filters-container">
-    <div class="filter-group">
-        <label>Indústria</label>
-        <select class="filter-select" id="filter-industria" onchange="loadDashboardData()"><option value="Todas">Todas</option></select>
-    </div>
-    <div class="filter-group">
-        <label>Distribuidor</label>
-        <select class="filter-select" id="filter-distribuidor" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
-    </div>
-    <div class="filter-group">
-        <label>Supervisor</label>
-        <select class="filter-select" id="filter-supervisor" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
-    </div>
-    <div class="filter-group">
-        <label>Vendedor</label>
-        <select class="filter-select" id="filter-vendedor" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
-    </div>
-    <div class="filter-group">
-        <label>Cliente</label>
-        <select class="filter-select" id="filter-cliente" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
-    </div>
-    <div class="filter-group">
-        <label>UF</label>
-        <select class="filter-select" id="filter-uf" onchange="loadDashboardData()"><option value="Todas">Todas</option></select>
-    </div>
-    <div class="filter-group">
-        <label>Ano</label>
-        <select class="filter-select" id="filter-ano" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
-    </div>
-    <div class="filter-group">
-        <label>Mês</label>
-        <select class="filter-select" id="filter-mes" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
-    </div>
-    <div class="filter-group">
-        <label>Produto</label>
-        <select class="filter-select" id="filter-produto" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+    <!-- Filtros Gerais -->
+    <div class="filters-bar" id="filters-container">
+        <div class="filter-group">
+            <label>Indústria</label>
+            <select class="filter-select" id="filter-industria" onchange="loadDashboardData()"><option value="Todas">Todas</option></select>
+        </div>
+        <div class="filter-group">
+            <label>Distribuidor</label>
+            <select class="filter-select" id="filter-distribuidor" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+        </div>
+        <div class="filter-group">
+            <label>Supervisor</label>
+            <select class="filter-select" id="filter-supervisor" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+        </div>
+        <div class="filter-group">
+            <label>Vendedor</label>
+            <select class="filter-select" id="filter-vendedor" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+        </div>
+        <div class="filter-group">
+            <label>Cliente</label>
+            <select class="filter-select" id="filter-cliente" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+        </div>
+        <div class="filter-group">
+            <label>UF</label>
+            <select class="filter-select" id="filter-uf" onchange="loadDashboardData()"><option value="Todas">Todas</option></select>
+        </div>
+        <div class="filter-group">
+            <label>Ano</label>
+            <select class="filter-select" id="filter-ano" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+        </div>
+        <div class="filter-group">
+            <label>Mês</label>
+            <select class="filter-select" id="filter-mes" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+        </div>
+        <div class="filter-group">
+            <label>Produto</label>
+            <select class="filter-select" id="filter-produto" onchange="loadDashboardData()"><option value="Todos">Todos</option></select>
+        </div>
+        <div class="filter-group" style="justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="clearDashboardFilters()" style="padding: 0.5rem; font-size: 0.8rem; height: 38px; width: 100%; border: 1px solid rgba(255, 255, 255, 0.15);">
+                <i class="fa-solid fa-filter-circle-xmark"></i> Remover Filtros
+            </button>
+        </div>
     </div>
 </div>
 
@@ -805,6 +813,20 @@
         }
     }
 
+    // Remover todos os filtros ativos
+    function clearDashboardFilters() {
+        document.getElementById("filter-industria").value = "Todas";
+        document.getElementById("filter-distribuidor").value = "Todos";
+        document.getElementById("filter-supervisor").value = "Todos";
+        document.getElementById("filter-vendedor").value = "Todos";
+        document.getElementById("filter-cliente").value = "Todos";
+        document.getElementById("filter-uf").value = "Todas";
+        document.getElementById("filter-ano").value = "Todos";
+        document.getElementById("filter-mes").value = "Todos";
+        document.getElementById("filter-produto").value = "Todos";
+        loadDashboardData();
+    }
+
     // Instâncias Globais dos Gráficos
     let charts = {};
 
@@ -1082,7 +1104,10 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false }, datalabels: dlOptions },
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 }) 
+                },
                 scales: {
                     y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
@@ -1110,7 +1135,10 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false }, datalabels: dlOptions },
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 }) 
+                },
                 scales: {
                     y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
@@ -1140,7 +1168,10 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false }, datalabels: dlOptions },
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 4 }) 
+                },
                 scales: {
                     y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
@@ -1175,7 +1206,10 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: dlOptions },
+                plugins: { 
+                    legend: { labels: { color: '#8f9cae' } }, 
+                    datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 }) 
+                },
                 scales: {
                     y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
@@ -1194,17 +1228,21 @@
                     label: 'Ticket Médio R$',
                     data: chartData.months_tickets,
                     borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.05)',
                     borderWidth: 5,
                     pointBackgroundColor: '#fff',
                     pointRadius: 6,
-                    fill: false,
+                    fill: true,
                     tension: 0.15
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false }, datalabels: dlOptions },
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 4 }) 
+                },
                 scales: {
                     y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }
@@ -1230,34 +1268,39 @@
                         backgroundColor: gradC1,
                         borderColor: '#6366f1',
                         borderWidth: 1.5,
-                        yAxisID: 'y'
+                        yAxisID: 'y',
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 })
                     },
                     {
                         type: 'line',
                         label: 'Unidades',
                         data: chartData.months_units,
                         borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.04)',
                         borderWidth: 5,
                         pointRadius: 4,
-                        fill: false,
-                        yAxisID: 'y1'
+                        fill: true,
+                        yAxisID: 'y1',
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 8 })
                     },
                     {
                         type: 'line',
                         label: 'Ticket Médio R$',
                         data: chartData.months_tickets,
                         borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.04)',
                         borderWidth: 5,
                         pointRadius: 4,
-                        fill: false,
-                        yAxisID: 'y1'
+                        fill: true,
+                        yAxisID: 'y1',
+                        datalabels: Object.assign({}, dlOptions, { align: 'bottom', anchor: 'start', offset: 8 })
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: dlOptions },
+                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: { display: true } },
                 scales: {
                     y: {
                         type: 'linear',
@@ -1296,34 +1339,39 @@
                         backgroundColor: gradP1,
                         borderColor: '#ec4899',
                         borderWidth: 1.5,
-                        yAxisID: 'y'
+                        yAxisID: 'y',
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 })
                     },
                     {
                         type: 'line',
                         label: 'CNPJs Positivados',
                         data: chartData.months_cnpjs,
                         borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.04)',
                         borderWidth: 5,
                         pointRadius: 4,
-                        fill: false,
-                        yAxisID: 'y1'
+                        fill: true,
+                        yAxisID: 'y1',
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 8 })
                     },
                     {
                         type: 'line',
                         label: 'Unidades faturadas',
                         data: chartData.months_units,
                         borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.04)',
                         borderWidth: 5,
                         pointRadius: 4,
-                        fill: false,
-                        yAxisID: 'y1'
+                        fill: true,
+                        yAxisID: 'y1',
+                        datalabels: Object.assign({}, dlOptions, { align: 'bottom', anchor: 'start', offset: 8 })
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: dlOptions },
+                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: { display: true } },
                 scales: {
                     y: {
                         type: 'linear',
@@ -1363,34 +1411,39 @@
                         backgroundColor: gradD,
                         borderColor: '#00a8ff',
                         borderWidth: 1.5,
-                        yAxisID: 'y'
+                        yAxisID: 'y',
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 })
                     },
                     {
                         type: 'line',
                         label: 'CNPJ Positivado',
                         data: chartData.months_cnpjs,
                         borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.04)',
                         borderWidth: 5,
                         pointRadius: 4,
-                        fill: false,
-                        yAxisID: 'y1'
+                        fill: true,
+                        yAxisID: 'y1',
+                        datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 8 })
                     },
                     {
                         type: 'line',
                         label: 'Ticket Médio R$',
                         data: chartData.months_tickets,
                         borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.04)',
                         borderWidth: 5,
                         pointRadius: 4,
-                        fill: false,
-                        yAxisID: 'y1'
+                        fill: true,
+                        yAxisID: 'y1',
+                        datalabels: Object.assign({}, dlOptions, { align: 'bottom', anchor: 'start', offset: 8 })
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: dlOptions },
+                plugins: { legend: { labels: { color: '#8f9cae' } }, datalabels: { display: true } },
                 scales: {
                     y: {
                         type: 'linear',
@@ -1432,7 +1485,15 @@
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false }, datalabels: dlOptions },
+                layout: {
+                    padding: {
+                        right: 50 // Padding right to avoid datalabel cuts
+                    }
+                },
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: Object.assign({}, dlOptions, { align: 'end', anchor: 'end', offset: 4 }) 
+                },
                 scales: {
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     y: { grid: { display: false }, ticks: { color: '#8f9cae' } }
@@ -1460,7 +1521,10 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false }, datalabels: dlOptions },
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: Object.assign({}, dlOptions, { align: 'top', anchor: 'end', offset: 2 }) 
+                },
                 scales: {
                     y: { grid: { display: false }, ticks: { color: '#8f9cae' } },
                     x: { grid: { display: false }, ticks: { color: '#8f9cae' } }

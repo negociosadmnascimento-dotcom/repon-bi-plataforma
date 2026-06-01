@@ -223,13 +223,25 @@ body {
     margin-top: 0.25rem;
 }
 
+/* Sticky Header Container */
+.sticky-header-container {
+    position: sticky;
+    top: 0;
+    z-index: 99;
+    background-color: var(--bg-primary);
+    padding-top: 1rem;
+    padding-bottom: 0.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
 /* Sub-tabs horizontal selector (e.g. Visão Geral, Clientes, Produtos) */
 .sub-tabs-container {
     display: flex;
     gap: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sub-tab {
@@ -698,4 +710,39 @@ body {
 
 .comparison-panel.secondary .comparison-title::before {
     background-color: var(--secondary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .charts-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .comparison-layout {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .app-container {
+        flex-direction: column;
+    }
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        min-height: auto;
+        padding: 1.5rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+        padding: 1.5rem 1rem;
+    }
+    .sticky-header-container {
+        top: 0;
+    }
 }
