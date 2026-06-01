@@ -236,243 +236,220 @@ def api_data(service):
     db = get_db()
     Model = SellOutRow if service == "sell_out" else SellInRow
     
-    query = db.query(Model).filter_by(client_id=client_id)
+    # Função auxiliar para aplicar os filtros comuns
+    def apply_filters(q):
+        if filters.get('industria') and filters['industria'] != 'Todas':
+            q = q.filter(Model.industria == filters['industria'])
+        if filters.get('distribuidor') and filters['distribuidor'] != 'Todos':
+            q = q.filter(Model.distribuidor == filters['distribuidor'])
+        if filters.get('supervisor') and filters['supervisor'] != 'Todos':
+            q = q.filter(Model.supervisor == filters['supervisor'])
+        if filters.get('vendedor') and filters['vendedor'] != 'Todos':
+            q = q.filter(Model.vendedor == filters['vendedor'])
+        if filters.get('cliente') and filters['cliente'] != 'Todos':
+            q = q.filter(Model.cliente == filters['cliente'])
+        if filters.get('uf') and filters['uf'] != 'Todas':
+            q = q.filter(Model.uf == filters['uf'])
+        if filters.get('ano') and filters['ano'] != 'Todos':
+            q = q.filter(Model.ano == int(filters['ano']))
+        if filters.get('mes') and filters['mes'] != 'Todos':
+            q = q.filter(Model.mes == filters['mes'])
+        if filters.get('produto') and filters['produto'] != 'Todos':
+            q = q.filter(Model.material_desc == filters['produto'])
+        return q
+
+    # 1. KPIs Gerais
+    kpis_query = db.query(
+        func.sum(Model.valor_fat).label('total_fat'),
+        func.sum(Model.unid_faturada).label('total_unidades'),
+        func.count(distinct(Model.cnpj)).label('total_cnpjs'),
+        func.count(distinct(Model.ean)).label('total_skus')
+    ).filter(Model.client_id == client_id)
+    kpis_query = apply_filters(kpis_query)
+    total_fat, total_unidades, cnpjs_positivados, total_skus_distinct = kpis_query.first()
     
-    # Aplicar filtros
-    if filters.get('industria') and filters['industria'] != 'Todas':
-        query = query.filter(Model.industria == filters['industria'])
-    if filters.get('distribuidor') and filters['distribuidor'] != 'Todos':
-        query = query.filter(Model.distribuidor == filters['distribuidor'])
-    if filters.get('supervisor') and filters['supervisor'] != 'Todos':
-        query = query.filter(Model.supervisor == filters['supervisor'])
-    if filters.get('vendedor') and filters['vendedor'] != 'Todos':
-        query = query.filter(Model.vendedor == filters['vendedor'])
-    if filters.get('cliente') and filters['cliente'] != 'Todos':
-        query = query.filter(Model.cliente == filters['cliente'])
-    if filters.get('uf') and filters['uf'] != 'Todas':
-        query = query.filter(Model.uf == filters['uf'])
-    if filters.get('ano') and filters['ano'] != 'Todos':
-        query = query.filter(Model.ano == int(filters['ano']))
-    if filters.get('mes') and filters['mes'] != 'Todos':
-        query = query.filter(Model.mes == filters['mes'])
-    if filters.get('produto') and filters['produto'] != 'Todos':
-        query = query.filter(Model.material_desc == filters['produto'])
-        
-    rows = query.all()
-    
-    # Calcular KPIs Gerais
-    total_fat = sum(r.valor_fat for r in rows)
-    total_unidades = sum(r.unid_faturada for r in rows)
+    total_fat = total_fat or 0.0
+    total_unidades = total_unidades or 0.0
+    cnpjs_positivados = cnpjs_positivados or 0
+    total_skus_distinct = total_skus_distinct or 0
     ticket_medio = total_fat / total_unidades if total_unidades > 0 else 0.0
-    cnpjs_positivados = len(set(r.cnpj for r in rows if r.cnpj))
+
+    # 2. Histórico de Faturamento por Mês
+    monthly_query = db.query(
+        Model.mes,
+        func.sum(Model.valor_fat).label('fat'),
+        func.sum(Model.unid_faturada).label('unid'),
+        func.count(distinct(Model.cnpj)).label('cnpjs')
+    ).filter(Model.client_id == client_id)
+    monthly_query = apply_filters(monthly_query).group_by(Model.mes)
+    monthly_rows = monthly_query.all()
     
-    # Faturamento por Mês
     months_ordered = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
     month_fat = {m: 0.0 for m in months_ordered}
     month_unid = {m: 0.0 for m in months_ordered}
-    month_cnpjs = {m: set() for m in months_ordered}
+    month_cnpjs = {m: 0 for m in months_ordered}
     
-    # Detalhado por cliente para Aba Clientes
-    # CNPJ -> {razao, uf, fat, unidades, skus: set(), meses: set()}
-    client_map = {}
+    m_map = {
+        "jan": "Janeiro", "fev": "Fevereiro", "mar": "Março", "abr": "Abril", "mai": "Maio", "jun": "Junho",
+        "jul": "Julho", "ago": "Agosto", "set": "Setembro", "out": "Outubro", "nov": "Novembro", "dez": "Dezembro",
+        "janeiro": "Janeiro", "fevereiro": "Fevereiro", "março": "Março", "abril": "Abril", "maio": "Maio",
+        "junho": "Junho", "julho": "Julho", "agosto": "Agosto", "setembro": "Setembro", "outubro": "Outubro",
+        "novembro": "Novembro", "dezembro": "Dezembro"
+    }
     
-    # Detalhado por produto para Aba Produtos
-    # EAN -> {desc, industria, fat, unidades, cnpjs: set()}
-    product_map = {}
-    
-    # Detalhado por distribuidor
-    distrib_fat = {}
-    distrib_cnpjs = {}
-    
-    # Detalhado por supervisor
-    supervisor_map = {} # nome -> {distrib, fat, unidades, cnpjs: set(), skus: set()}
-    
-    # Detalhado por vendedor
-    vendedor_map = {} # nome -> {fat, unidades, cnpjs: set(), skus: set()}
-    
-    for r in rows:
-        m = r.mes
-        if m in month_fat:
-            month_fat[m] += r.valor_fat
-            month_unid[m] += r.unid_faturada
-            if r.cnpj:
-                month_cnpjs[m].add(r.cnpj)
+    for r in monthly_rows:
+        if r[0]:
+            m_key = str(r[0]).strip().lower()
+            mapped_m = m_map.get(m_key)
+            if mapped_m:
+                month_fat[mapped_m] = r[1] or 0.0
+                month_unid[mapped_m] = r[2] or 0.0
+                month_cnpjs[mapped_m] = r[3] or 0
                 
-        # Cliente mapping
-        c_key = r.cnpj or r.razao_social or "Sem CNPJ"
-        if c_key not in client_map:
-            client_map[c_key] = {
-                "cnpj": r.cnpj or "Sem CNPJ",
-                "razao_social": r.razao_social or "Desconhecido",
-                "uf": r.uf or "--",
-                "faturamento": 0.0,
-                "unidades": 0.0,
-                "skus": set(),
-                "meses": set()
-            }
-        client_map[c_key]["faturamento"] += r.valor_fat
-        client_map[c_key]["unidades"] += r.unid_faturada
-        if r.ean:
-            client_map[c_key]["skus"].add(r.ean)
-        if r.mes:
-            client_map[c_key]["meses"].add(r.mes)
-            
-        # Produto mapping
-        p_key = r.ean or r.material_desc or "Sem EAN"
-        if p_key not in product_map:
-            product_map[p_key] = {
-                "ean": r.ean or "Sem EAN",
-                "material_desc": r.material_desc or "Sem Descrição",
-                "industria": r.industria or "--",
-                "faturamento": 0.0,
-                "unidades": 0.0,
-                "cnpjs": set()
-            }
-        product_map[p_key]["faturamento"] += r.valor_fat
-        product_map[p_key]["unidades"] += r.unid_faturada
-        if r.cnpj:
-            product_map[p_key]["cnpjs"].add(r.cnpj)
-            
-        # Distribuidor mapping
-        d_key = r.distribuidor or "Outros"
-        distrib_fat[d_key] = distrib_fat.get(d_key, 0.0) + r.valor_fat
-        if d_key not in distrib_cnpjs:
-            distrib_cnpjs[d_key] = set()
-        if r.cnpj:
-            distrib_cnpjs[d_key].add(r.cnpj)
-            
-        # Supervisor mapping
-        s_key = r.supervisor or "Sem Supervisor"
-        if s_key not in supervisor_map:
-            supervisor_map[s_key] = {
-                "supervisor": s_key,
-                "distribuidor": r.distribuidor or "--",
-                "faturamento": 0.0,
-                "unidades": 0.0,
-                "cnpjs": set(),
-                "skus": set()
-            }
-        supervisor_map[s_key]["faturamento"] += r.valor_fat
-        supervisor_map[s_key]["unidades"] += r.unid_faturada
-        if r.cnpj:
-            supervisor_map[s_key]["cnpjs"].add(r.cnpj)
-        if r.ean:
-            supervisor_map[s_key]["skus"].add(r.ean)
-            
-        # Vendedor mapping
-        v_key = r.vendedor or "Sem Vendedor"
-        if v_key not in vendedor_map:
-            vendedor_map[v_key] = {
-                "vendedor": v_key,
-                "faturamento": 0.0,
-                "unidades": 0.0,
-                "cnpjs": set(),
-                "skus": set()
-            }
-        vendedor_map[v_key]["faturamento"] += r.valor_fat
-        vendedor_map[v_key]["unidades"] += r.unid_faturada
-        if r.cnpj:
-            vendedor_map[v_key]["cnpjs"].add(r.cnpj)
-        if r.ean:
-            vendedor_map[v_key]["skus"].add(r.ean)
-            
-    # Formatar dados de meses (remover meses sem faturamento ou manter ordem)
     chart_months = [m for m in months_ordered if month_fat[m] > 0]
     chart_month_values = [month_fat[m] for m in chart_months]
     chart_month_units = [month_unid[m] for m in chart_months]
-    chart_month_cnpjs = [len(month_cnpjs[m]) for m in chart_months]
+    chart_month_cnpjs = [month_cnpjs[m] for m in chart_months]
     chart_month_tickets = [month_fat[m] / month_unid[m] if month_unid[m] > 0 else 0.0 for m in chart_months]
+
+    # 3. Ranking de Clientes
+    client_query = db.query(
+        Model.cnpj,
+        Model.razao_social,
+        Model.uf,
+        func.sum(Model.valor_fat).label('fat'),
+        func.sum(Model.unid_faturada).label('unid'),
+        func.count(distinct(Model.ean)).label('mix'),
+        func.count(distinct(Model.mes)).label('frequencia')
+    ).filter(Model.client_id == client_id)
+    client_query = apply_filters(client_query).group_by(Model.cnpj, Model.razao_social, Model.uf).order_by(func.sum(Model.valor_fat).desc())
+    client_rows = client_query.all()
     
-    # Ranking Clientes
-    sorted_clients = sorted(client_map.values(), key=lambda x: x["faturamento"], reverse=True)
-    top_clients_labels = [c["razao_social"] for c in sorted_clients[:10]]
-    top_clients_values = [c["faturamento"] for c in sorted_clients[:10]]
+    top_clients_labels = [r[1] or "Desconhecido" for r in client_rows[:10]]
+    top_clients_values = [r[3] or 0.0 for r in client_rows[:10]]
     
-    # Formatação do Ranking detalhado de Clientes
     detailed_clients = []
-    for i, c in enumerate(sorted_clients):
+    for i, r in enumerate(client_rows):
+        fat_val = r[3] or 0.0
+        unid_val = r[4] or 0.0
         detailed_clients.append({
             "rank": i + 1,
-            "cnpj": c["cnpj"],
-            "razao_social": c["razao_social"],
-            "uf": c["uf"],
-            "faturamento": f"R$ {c['faturamento']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            "unidades": int(c["unidades"]),
-            "mix": len(c["skus"]),
-            "frequencia": len(c["meses"]),
-            "ticket_medio": f"R$ {c['faturamento']/c['unidades']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if c["unidades"] > 0 else "R$ 0,00",
-            "share": f"{(c['faturamento'] / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
+            "cnpj": r[0] or "Sem CNPJ",
+            "razao_social": r[1] or "Desconhecido",
+            "uf": r[2] or "--",
+            "faturamento": f"R$ {fat_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+            "unidades": int(unid_val),
+            "mix": r[5] or 0,
+            "frequencia": r[6] or 0,
+            "ticket_medio": f"R$ {fat_val/unid_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if unid_val > 0 else "R$ 0,00",
+            "share": f"{(fat_val / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
         })
-        
-    # Faturamento Top 50 (Soma dos 50 primeiros)
-    fat_top50 = sum(c["faturamento"] for c in sorted_clients[:50])
+    fat_top50 = sum(r[3] or 0.0 for r in client_rows[:50])
+
+    # 4. Ranking de Produtos
+    product_query = db.query(
+        Model.ean,
+        Model.material_desc,
+        Model.industria,
+        func.sum(Model.valor_fat).label('fat'),
+        func.sum(Model.unid_faturada).label('unid'),
+        func.count(distinct(Model.cnpj)).label('cnpjs')
+    ).filter(Model.client_id == client_id)
+    product_query = apply_filters(product_query).group_by(Model.ean, Model.material_desc, Model.industria).order_by(func.sum(Model.valor_fat).desc())
+    product_rows = product_query.all()
     
-    # Total de SKUs distintos faturados
-    total_skus_distinct = len(product_map)
-    
-    # Ranking Produtos
-    sorted_products = sorted(product_map.values(), key=lambda x: x["faturamento"], reverse=True)
-    top_products_labels = [p["material_desc"] for p in sorted_products[:10]]
-    top_products_values = [p["faturamento"] for p in sorted_products[:10]]
+    top_products_labels = [r[1] or "Sem Descrição" for r in product_rows[:10]]
+    top_products_values = [r[3] or 0.0 for r in product_rows[:10]]
     
     detailed_products = []
-    for i, p in enumerate(sorted_products):
+    for i, r in enumerate(product_rows):
+        fat_val = r[3] or 0.0
+        unid_val = r[4] or 0.0
         detailed_products.append({
             "rank": i + 1,
-            "ean": p["ean"],
-            "material_desc": p["material_desc"],
-            "industria": p["industria"],
-            "faturamento": f"R$ {p['faturamento']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            "unidades": int(p["unidades"]),
-            "cnpjs": len(p["cnpjs"]),
-            "ticket_medio": f"R$ {p['faturamento']/p['unidades']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if p["unidades"] > 0 else "R$ 0,00",
-            "share": f"{(p['faturamento'] / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
+            "ean": r[0] or "Sem EAN",
+            "material_desc": r[1] or "Sem Descrição",
+            "industria": r[2] or "--",
+            "faturamento": f"R$ {fat_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+            "unidades": int(unid_val),
+            "cnpjs": r[5] or 0,
+            "ticket_medio": f"R$ {fat_val/unid_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if unid_val > 0 else "R$ 0,00",
+            "share": f"{(fat_val / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
         })
-        
-    # Faturamento Top 20 SKUs
-    fat_top20_skus = sum(p["faturamento"] for p in sorted_products[:20])
+    fat_top20_skus = sum(r[3] or 0.0 for r in product_rows[:20])
+
+    # 5. Distribuidores
+    distrib_query = db.query(
+        Model.distribuidor,
+        func.sum(Model.valor_fat).label('fat'),
+        func.count(distinct(Model.cnpj)).label('cnpjs')
+    ).filter(Model.client_id == client_id)
+    distrib_query = apply_filters(distrib_query).group_by(Model.distribuidor).order_by(func.sum(Model.valor_fat).desc())
+    distrib_rows = distrib_query.all()
     
-    # Formatadores do Distribuidor
     distrib_list = []
-    for d, f in distrib_fat.items():
+    for r in distrib_rows:
+        fat_val = r[1] or 0.0
         distrib_list.append({
-            "distribuidor": d,
-            "faturamento": f,
-            "faturamento_str": f"R$ {f:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            "cnpjs": len(distrib_cnpjs.get(d, set())),
-            "share": f"{(f / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
+            "distribuidor": r[0] or "Outros",
+            "faturamento": fat_val,
+            "faturamento_str": f"R$ {fat_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+            "cnpjs": r[2] or 0,
+            "share": f"{(fat_val / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
         })
-    distrib_list = sorted(distrib_list, key=lambda x: x["faturamento"], reverse=True)
+
+    # 6. Supervisores
+    supervisor_query = db.query(
+        Model.supervisor,
+        Model.distribuidor,
+        func.sum(Model.valor_fat).label('fat'),
+        func.sum(Model.unid_faturada).label('unid'),
+        func.count(distinct(Model.cnpj)).label('cnpjs'),
+        func.count(distinct(Model.ean)).label('skus')
+    ).filter(Model.client_id == client_id)
+    supervisor_query = apply_filters(supervisor_query).group_by(Model.supervisor, Model.distribuidor).order_by(func.sum(Model.valor_fat).desc())
+    supervisor_rows = supervisor_query.all()
     
-    # Formatadores de Supervisor
-    sorted_supervisors = sorted(supervisor_map.values(), key=lambda x: x["faturamento"], reverse=True)
     detailed_supervisors = []
-    for i, s in enumerate(sorted_supervisors):
+    for i, r in enumerate(supervisor_rows):
+        fat_val = r[2] or 0.0
+        unid_val = r[3] or 0.0
         detailed_supervisors.append({
             "rank": i + 1,
-            "supervisor": s["supervisor"],
-            "distribuidor": s["distribuidor"],
-            "faturamento": f"R$ {s['faturamento']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            "unidades": int(s["unidades"]),
-            "ticket_medio": f"R$ {s['faturamento']/s['unidades']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if s["unidades"] > 0 else "R$ 0,00",
-            "cnpjs": len(s["cnpjs"]),
-            "skus": len(s["skus"]),
-            "share": f"{(s['faturamento'] / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
+            "supervisor": r[0] or "Sem Supervisor",
+            "distribuidor": r[1] or "--",
+            "faturamento": f"R$ {fat_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+            "unidades": int(unid_val),
+            "ticket_medio": f"R$ {fat_val/unid_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if unid_val > 0 else "R$ 0,00",
+            "cnpjs": r[4] or 0,
+            "skus": r[5] or 0,
+            "share": f"{(fat_val / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
         })
-        
-    # Formatadores de Vendedores
-    sorted_vendedores = sorted(vendedor_map.values(), key=lambda x: x["faturamento"], reverse=True)
+
+    # 7. Vendedores
+    vendedor_query = db.query(
+        Model.vendedor,
+        func.sum(Model.valor_fat).label('fat'),
+        func.sum(Model.unid_faturada).label('unid'),
+        func.count(distinct(Model.cnpj)).label('cnpjs'),
+        func.count(distinct(Model.ean)).label('skus')
+    ).filter(Model.client_id == client_id)
+    vendedor_query = apply_filters(vendedor_query).group_by(Model.vendedor).order_by(func.sum(Model.valor_fat).desc())
+    vendedor_rows = vendedor_query.all()
+    
     detailed_vendedores = []
-    for i, v in enumerate(sorted_vendedores):
+    for i, r in enumerate(vendedor_rows):
+        fat_val = r[1] or 0.0
+        unid_val = r[2] or 0.0
         detailed_vendedores.append({
             "rank": i + 1,
-            "vendedor": v["vendedor"],
-            "faturamento": f"R$ {v['faturamento']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            "unidades": int(v["unidades"]),
-            "ticket_medio": f"R$ {v['faturamento']/v['unidades']:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if v["unidades"] > 0 else "R$ 0,00",
-            "cnpjs": len(v["cnpjs"]),
-            "skus": len(v["skus"]),
-            "share": f"{(v['faturamento'] / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
+            "vendedor": r[0] or "Sem Vendedor",
+            "faturamento": f"R$ {fat_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+            "unidades": int(unid_val),
+            "ticket_medio": f"R$ {fat_val/unid_val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if unid_val > 0 else "R$ 0,00",
+            "cnpjs": r[3] or 0,
+            "skus": r[4] or 0,
+            "share": f"{(fat_val / total_fat * 100):.2f}%" if total_fat > 0 else "0.00%"
         })
         
     db.close()

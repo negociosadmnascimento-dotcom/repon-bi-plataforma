@@ -49,8 +49,15 @@ def parse_excel_and_import(client_id, filepath, data_type, original_filename):
                 if pd.isna(val_raw):
                     return default
                 if is_num:
+                    val_str = str(val_raw).strip().replace("R$", "").replace(" ", "").replace("%", "")
+                    if val_str.startswith("(") and val_str.endswith(")"):
+                        val_str = "-" + val_str[1:-1]
+                    if "," in val_str:
+                        if "." in val_str:
+                            val_str = val_str.replace(".", "")
+                        val_str = val_str.replace(",", ".")
                     try:
-                        return float(val_raw) if '.' in str(val_raw) or 'e' in str(val_raw).lower() else int(val_raw)
+                        return float(val_str)
                     except ValueError:
                         return default
                 return str(val_raw).strip()
