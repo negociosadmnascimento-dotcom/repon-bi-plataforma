@@ -15,5 +15,11 @@
       "src": "/(.*)",
       "dest": "app.py"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-ping",
+      "schedule": "0 12 * * *"
+    }
   ]
 }

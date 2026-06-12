@@ -195,6 +195,22 @@ def dashboard_page(service):
     return render_template('dashboard.html', service=service)
 
 
+# ---- ENDPOINT DE KEEP-ALIVE PARA CRON JOBS ----
+@app.route('/api/cron-ping')
+def cron_ping():
+    db = get_db()
+    try:
+        db.execute("SELECT 1")
+        db.close()
+        return jsonify({"status": "success", "message": "Database pinged successfully"}), 200
+    except Exception as e:
+        try:
+            db.close()
+        except:
+            pass
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 # ---- ENDPOINTS DE API DO DASHBOARD (COM ISOLAMENTO DE CLIENTE) ----
 
 @app.route('/api/filters/<service>')
