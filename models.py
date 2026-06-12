@@ -147,6 +147,8 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
     scheme, rest = DATABASE_URL.split("://", 1)
     if "@" in rest:
         creds, host_part = rest.rsplit("@", 1)
+        user_part = creds.split(":", 1)[0] if ":" in creds else creds
+        print(f"DEBUG DB: Connecting with scheme={scheme}, user={user_part}, host_part={host_part}")
         if ":" in creds:
             user, password = creds.split(":", 1)
             password_escaped = urllib.parse.quote_plus(password)
