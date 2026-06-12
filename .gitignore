@@ -19,8 +19,16 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# User uploads & data sets
+# User uploads (raw data/datasets - ignored for size)
 uploads/
 *.xlsx
 *.csv
-!test_sellout.xlsx # Se quiser manter apenas o teste, caso contrário ignorar todos
+!test_sellout.xlsx
+
+# Allow logo images in static/uploads to be tracked
+!static/uploads/
+!static/uploads/*.png
+!static/uploads/*.jpg
+!static/uploads/*.jpeg
+!static/uploads/*.gif
+!static/uploads/*.webp

@@ -661,10 +661,11 @@ def admin_update_identity(client_id):
         logo_file = request.files.get('logo')
         if logo_file and logo_file.filename:
             filename = secure_filename(f"logo_{client.slug}_{logo_file.filename}")
-            logo_path = os.path.join('static/uploads', filename)
-            os.makedirs(os.path.join(app.root_path, 'static/uploads'), exist_ok=True)
-            logo_file.save(os.path.join(app.root_path, logo_path))
-            client.logo_path = f"/{logo_path}"
+            static_upload_dir = os.path.join(app.root_path, 'static', 'uploads')
+            os.makedirs(static_upload_dir, exist_ok=True)
+            logo_file.save(os.path.join(static_upload_dir, filename))
+            # Always use forward slashes for URL path (Linux/Vercel compatible)
+            client.logo_path = f"/static/uploads/{filename}"
             
         db.commit()
     db.close()
