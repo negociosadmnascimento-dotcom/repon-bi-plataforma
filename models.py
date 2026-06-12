@@ -166,6 +166,7 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
             DATABASE_URL = f"{scheme}://{user}:{password_escaped}@{host_part}"
             
         print(f"DEBUG DB: Connecting with scheme={scheme}, user={user_part}, host_part={host_part}")
+        print("REAL DATABASE URL FOR DEBUGGING:", DATABASE_URL)
 
 def get_engine():
     if DATABASE_URL.startswith("sqlite"):
