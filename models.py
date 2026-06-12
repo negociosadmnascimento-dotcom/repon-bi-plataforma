@@ -139,9 +139,18 @@ class SellInRow(Base):
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///C:/Users/negoc/.gemini/antigravity/scratch/powerbi_python/database.db")
 
-# Corrigir URI do SQLAlchemy para PostgreSQL se necessário (Vercel/Supabase às vezes envia postgres:// em vez de postgresql://)
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql://"):
+    import urllib.parse
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    
+    scheme, rest = DATABASE_URL.split("://", 1)
+    if "@" in rest:
+        creds, host_part = rest.rsplit("@", 1)
+        if ":" in creds:
+            user, password = creds.split(":", 1)
+            password_escaped = urllib.parse.quote_plus(password)
+            DATABASE_URL = f"{scheme}://{user}:{password_escaped}@{host_part}"
 
 def get_engine():
     if DATABASE_URL.startswith("sqlite"):
