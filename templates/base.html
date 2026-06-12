@@ -19,8 +19,21 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Mobile Header (Visible only on small screens) -->
+        <div class="mobile-header">
+            <div class="logo-section-mobile">
+                <img src="{{ theme.logo|default('/static/img/default_logo.png') }}" alt="Logo Cliente" onerror="this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
+            </div>
+            <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+        
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="mainSidebar">
+            <button class="sidebar-desktop-toggle" onclick="toggleDesktopSidebar()">
+                <i class="fa-solid fa-chevron-left" id="toggleIcon"></i>
+            </button>
             <div class="logo-section">
                 <img src="{{ theme.logo|default('/static/img/default_logo.png') }}" alt="Logo Cliente" onerror="this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
                 <div class="brand-info">
@@ -115,6 +128,40 @@
         </main>
     </div>
     
+    <script>
+        function toggleDesktopSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const icon = document.getElementById('toggleIcon');
+            sidebar.classList.toggle('collapsed');
+            
+            if (sidebar.classList.contains('collapsed')) {
+                icon.classList.remove('fa-chevron-left');
+                icon.classList.add('fa-chevron-right');
+                localStorage.setItem('sidebarState', 'collapsed');
+            } else {
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-left');
+                localStorage.setItem('sidebarState', 'expanded');
+            }
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            sidebar.classList.toggle('mobile-active');
+        }
+
+        // Restore sidebar state
+        document.addEventListener('DOMContentLoaded', () => {
+            const state = localStorage.getItem('sidebarState');
+            if (state === 'collapsed' && window.innerWidth > 992) {
+                const sidebar = document.getElementById('mainSidebar');
+                const icon = document.getElementById('toggleIcon');
+                sidebar.classList.add('collapsed');
+                icon.classList.remove('fa-chevron-left');
+                icon.classList.add('fa-chevron-right');
+            }
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

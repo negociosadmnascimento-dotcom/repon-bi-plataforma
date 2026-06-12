@@ -65,6 +65,84 @@ body {
     position: fixed;
     height: 100vh;
     z-index: 100;
+    transition: width 0.3s ease, left 0.3s ease;
+}
+
+/* Sidebar toggle buttons */
+.sidebar-desktop-toggle {
+    position: absolute;
+    top: 25px;
+    right: -15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    border: 3px solid var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 101;
+    transition: transform 0.3s;
+}
+
+.sidebar-desktop-toggle:hover {
+    transform: scale(1.1);
+}
+
+/* Collapsed state */
+.sidebar.collapsed {
+    width: 80px;
+}
+.sidebar.collapsed .brand-info,
+.sidebar.collapsed .menu-label,
+.sidebar.collapsed .user-details {
+    display: none;
+}
+.sidebar.collapsed .logo-section {
+    justify-content: center;
+}
+.sidebar.collapsed .menu-item a {
+    justify-content: center;
+    padding: 0.75rem 0;
+    font-size: 0; /* Hides text */
+}
+.sidebar.collapsed .menu-item a i {
+    font-size: 1.25rem;
+    margin: 0;
+}
+.sidebar.collapsed .logout-btn {
+    font-size: 0;
+    padding: 0.75rem;
+}
+.sidebar.collapsed .logout-btn i {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+/* Mobile Header */
+.mobile-header {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 101;
+    width: 100%;
+}
+.logo-section-mobile img {
+    height: 35px;
+}
+.mobile-menu-toggle {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
 }
 
 .logo-section {
@@ -201,6 +279,11 @@ body {
     flex: 1;
     padding: 2rem;
     min-height: 100vh;
+    transition: margin-left 0.3s ease;
+}
+
+.sidebar.collapsed ~ .main-content {
+    margin-left: 80px;
 }
 
 /* Header Area */
@@ -727,22 +810,53 @@ body {
     .app-container {
         flex-direction: column;
     }
+    .mobile-header {
+        display: flex;
+    }
     .sidebar {
-        position: relative;
+        position: fixed;
+        left: -100%;
+        top: 67px;
         width: 100%;
-        height: auto;
-        min-height: auto;
+        height: calc(100vh - 67px);
         padding: 1.5rem;
         border-right: none;
         border-bottom: 1px solid var(--border-color);
+        background-color: rgba(17, 21, 34, 0.98);
+        backdrop-filter: blur(15px);
+    }
+    .sidebar.mobile-active {
+        left: 0;
+    }
+    .sidebar-desktop-toggle {
+        display: none;
     }
     .main-content {
-        margin-left: 0;
+        margin-left: 0 !important;
         width: 100%;
         max-width: 100%;
         padding: 1.5rem 1rem;
     }
     .sticky-header-container {
         top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .kpis-grid {
+        grid-template-columns: 1fr;
+    }
+    .filters-bar {
+        grid-template-columns: 1fr 1fr;
+    }
+    .sub-tabs-container {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 1rem;
+    }
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
     }
 }
