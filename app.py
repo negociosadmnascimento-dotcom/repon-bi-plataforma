@@ -22,7 +22,11 @@ def initialize_database():
         print("Erro ao inicializar banco de dados:", str(e))
 
 # Pasta de upload compatível com caminhos relativos em ambientes serverless (Vercel)
-UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(app.root_path, 'uploads'))
+if os.environ.get('VERCEL') == '1':
+    UPLOAD_FOLDER = '/tmp/uploads'
+else:
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(app.root_path, 'uploads'))
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
