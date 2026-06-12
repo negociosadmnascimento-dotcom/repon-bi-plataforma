@@ -175,12 +175,14 @@ def get_engine():
             connect_args={"check_same_thread": False, "timeout": 60}
         )
     else:
-        # Configurações ideais para PostgreSQL (Supabase) rodando em nuvem com pool de conexões robusto
+        from sqlalchemy.pool import NullPool
+        # Configuração ideal para Serverless (Vercel) + Supabase Pooler:
+        # Usar NullPool para não manter conexões ociosas localmente, evitando estourar
+        # o limite de conexões do pooler (ex: EMAXCONNSESSION max_clients=15)
         return create_engine(
             DATABASE_URL,
-            pool_size=10,
-            max_overflow=20,
-            pool_recycle=300
+            poolclass=NullPool,
+            connect_args={"options": "-c statement_timeout=10000"} # Timeout opcional para segurança
         )
 
 def init_db():
