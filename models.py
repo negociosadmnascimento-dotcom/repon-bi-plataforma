@@ -148,11 +148,24 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
     if "@" in rest:
         creds, host_part = rest.rsplit("@", 1)
         user_part = creds.split(":", 1)[0] if ":" in creds else creds
-        print(f"DEBUG DB: Connecting with scheme={scheme}, user={user_part}, host_part={host_part}")
+        
+        # Detectar hostname direto da Supabase (IPv6-only) e redirecionar para o Connection Pooler (IPv4)
         if ":" in creds:
             user, password = creds.split(":", 1)
+            import re
+            match = re.search(r"db\.([a-zA-Z0-9]+)\.supabase\.co", host_part)
+            if match:
+                project_ref = match.group(1)
+                pooler_host = "aws-0-sa-east-1.pooler.supabase.com:6543"
+                host_part = re.sub(r"db\.[a-zA-Z0-9]+\.supabase\.co(:\d+)?", pooler_host, host_part)
+                if not user.endswith(f".{project_ref}"):
+                    user = f"{user}.{project_ref}"
+                user_part = user
+            
             password_escaped = urllib.parse.quote_plus(password)
             DATABASE_URL = f"{scheme}://{user}:{password_escaped}@{host_part}"
+            
+        print(f"DEBUG DB: Connecting with scheme={scheme}, user={user_part}, host_part={host_part}")
 
 def get_engine():
     if DATABASE_URL.startswith("sqlite"):
