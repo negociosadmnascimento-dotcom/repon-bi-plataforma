@@ -156,7 +156,7 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
             match = re.search(r"db\.([a-zA-Z0-9]+)\.supabase\.co", host_part)
             if match:
                 project_ref = match.group(1)
-                pooler_host = "aws-0-sa-east-1.pooler.supabase.com:6543"
+                pooler_host = "aws-0-sa-east-1.pooler.supabase.com:5432"
                 host_part = re.sub(r"db\.[a-zA-Z0-9]+\.supabase\.co(:\d+)?", pooler_host, host_part)
                 if not user.endswith(f".{project_ref}"):
                     user = f"{user}.{project_ref}"
