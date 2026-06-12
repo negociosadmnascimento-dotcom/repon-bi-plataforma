@@ -156,7 +156,7 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
             match = re.search(r"db\.([a-zA-Z0-9]+)\.supabase\.co", host_part)
             if match:
                 project_ref = match.group(1)
-                pooler_host = "aws-0-sa-east-1.pooler.supabase.com:5432"
+                pooler_host = "aws-1-sa-east-1.pooler.supabase.com:5432"
                 host_part = re.sub(r"db\.[a-zA-Z0-9]+\.supabase\.co(:\d+)?", pooler_host, host_part)
                 if not user.endswith(f".{project_ref}"):
                     user = f"{user}.{project_ref}"
@@ -166,7 +166,6 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
             DATABASE_URL = f"{scheme}://{user}:{password_escaped}@{host_part}"
             
         print(f"DEBUG DB: Connecting with scheme={scheme}, user={user_part}, host_part={host_part}")
-        print("REAL DATABASE URL FOR DEBUGGING:", DATABASE_URL)
 
 def get_engine():
     if DATABASE_URL.startswith("sqlite"):
