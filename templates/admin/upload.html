@@ -277,11 +277,46 @@
         }
     }
 
-    // Helper para extrair e tratar valores de colunas (case-insensitive)
+    // Helper para extrair e tratar valores de colunas (case-insensitive com alternativas)
     function val(row, colName, defaultValue = null, isNum = false) {
-        const key = Object.keys(row).find(k => k.trim().toUpperCase() === colName.trim().toUpperCase());
-        if (!key) return defaultValue;
-        const valRaw = row[key];
+        const alternatives = {
+            "INDUSTRIA": ["INDUSTRIA", "INDÚSTRIA", "FABRICANTE", "MARCA"],
+            "RAZAO SOCIAL": ["RAZAO SOCIAL", "RAZÃO SOCIAL", "RAZAO_SOCIAL", "NOME CLIENTE", "RAZÃO"],
+            "SUPERVISOR": ["SUPERVISOR", "SUPERVISORES", "SUP"],
+            "VENDEDOR": ["VENDEDOR", "VENDEDORES", "REPRESENTANTE"],
+            "EAN": ["EAN", "COD_BARRAS", "CODIGO_BARRAS", "EAN/GTIN", "GTIN"],
+            "MATERIAL/DESC": ["MATERIAL/DESC", "PRODUTO", "PRODUTOS", "DESCRICAO", "DESCRIÇÃO", "NOME PRODUTO", "NOME DO PRODUTO", "MATERIAL DESC", "MIX PADRAO", "MIX PADRÃO", "MATERIAL_DESC"],
+            "UNID. FATURADA": ["UNID. FATURADA", "UNIDADES", "UNID", "QTD", "QUANTIDADE", "VOLUME"],
+            "VALOR FAT.": ["VALOR FAT.", "VALOR FATURADO", "FATURAMENTO", "VALOR", "FAT", "VALOR LIQUIDO"],
+            "DISTRIBUIDOR": ["DISTRIBUIDOR", "PARCEIRO", "DISTRIBUIDORES"],
+            "ANO": ["ANO", "ANOS"],
+            "MES": ["MES", "MÊS", "MESES", "SIGLA_MES"],
+            "REDE": ["REDE", "REDES", "GRUPO"],
+            "CLIENTE": ["CLIENTE", "CLIENTES", "NOME CLIENTE", "COD CLIENTE"]
+        };
+
+        const targetList = alternatives[colName.toUpperCase()] || [colName];
+        
+        let foundKey = null;
+        const keys = Object.keys(row);
+        for (const target of targetList) {
+            const match = keys.find(k => k.trim().toUpperCase() === target.toUpperCase());
+            if (match) {
+                foundKey = match;
+                break;
+            }
+        }
+        
+        if (!foundKey) {
+            const targetsNormalized = targetList.map(t => t.replace(/_/g, " ").replace(/\//g, " ").trim().toUpperCase());
+            foundKey = keys.find(k => {
+                const normKey = k.replace(/_/g, " ").replace(/\//g, " ").trim().toUpperCase();
+                return targetsNormalized.includes(normKey);
+            });
+        }
+        
+        if (!foundKey) return defaultValue;
+        const valRaw = row[foundKey];
         if (valRaw === undefined || valRaw === null || valRaw === '') return defaultValue;
         
         if (isNum) {

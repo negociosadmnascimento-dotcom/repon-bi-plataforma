@@ -514,6 +514,131 @@ def api_data(service):
         }
     })
 
+# ---- ENDPOINT DE CRUZAMENTO DE BASES (DECISÃO COMERCIAL) ----
+
+@app.route('/api/cruzamento/<service>', methods=['POST'])
+@login_required
+def api_cruzamento(service):
+    client_id = session.get('client_id')
+    if not client_id:
+        return jsonify({"error": "Sem dados de cliente."}), 400
+        
+    params = request.json or {}
+    base_filters = params.get('base', {})
+    anal_filters = params.get('analise', {})
+    
+    db = get_db()
+    Model = SellOutRow if service == "sell_out" else SellInRow
+    
+    # Helper para aplicar os filtros a uma query (multi-seleção via IN)
+    def apply_query_filters(q, filters):
+        if filters.get('industria') and 'Todas' not in filters['industria'] and len(filters['industria']) > 0:
+            q = q.filter(Model.industria.in_(filters['industria']))
+            
+        if filters.get('distribuidor') and 'Todos' not in filters['distribuidor'] and len(filters['distribuidor']) > 0:
+            q = q.filter(Model.distribuidor.in_(filters['distribuidor']))
+            
+        if filters.get('supervisor') and 'Todos' not in filters['supervisor'] and len(filters['supervisor']) > 0:
+            q = q.filter(Model.supervisor.in_(filters['supervisor']))
+            
+        if filters.get('vendedor') and 'Todos' not in filters['vendedor'] and len(filters['vendedor']) > 0:
+            q = q.filter(Model.vendedor.in_(filters['vendedor']))
+            
+        if filters.get('cliente') and 'Todos' not in filters['cliente'] and len(filters['cliente']) > 0:
+            q = q.filter(Model.razao_social.in_(filters['cliente']))
+            
+        if filters.get('produto') and 'Todos' not in filters['produto'] and len(filters['produto']) > 0:
+            q = q.filter(Model.material_desc.in_(filters['produto']))
+            
+        if filters.get('ano') and 'Todos' not in filters['ano'] and len(filters['ano']) > 0:
+            anos = []
+            for a in filters['ano']:
+                try:
+                    anos.append(int(a))
+                except:
+                    pass
+            if anos:
+                q = q.filter(Model.ano.in_(anos))
+                
+        if filters.get('mes') and 'Todos' not in filters['mes'] and len(filters['mes']) > 0:
+            q = q.filter(Model.mes.in_(filters['mes']))
+            
+        return q
+
+    # 1. Base Padrão: CNPJ, Razão Social, faturamento, unidades e mix
+    base_q = db.query(
+        Model.cnpj.label('cnpj'),
+        func.max(Model.razao_social).label('cliente'),
+        func.sum(Model.valor_fat).label('base_val'),
+        func.sum(Model.unid_faturada).label('base_unid'),
+        func.count(distinct(Model.ean)).label('base_mix')
+    ).filter(Model.client_id == client_id)
+    base_q = apply_query_filters(base_q, base_filters)
+    base_rows = base_q.group_by(Model.cnpj).all()
+    
+    # 2. Base Análise: CNPJ, faturamento e unidades
+    anal_q = db.query(
+        Model.cnpj.label('cnpj'),
+        func.sum(Model.valor_fat).label('anal_val'),
+        func.sum(Model.unid_faturada).label('anal_unid')
+    ).filter(Model.client_id == client_id)
+    anal_q = apply_query_filters(anal_q, anal_filters)
+    anal_rows = anal_q.group_by(Model.cnpj).all()
+    
+    db.close()
+    
+    # Mapear Base Análise por CNPJ para junção rápida em memória
+    anal_map = {}
+    for r in anal_rows:
+        if r.cnpj:
+            anal_map[r.cnpj] = {
+                "anal_val": r.anal_val or 0.0,
+                "anal_unid": r.anal_unid or 0.0
+            }
+            
+    # Realizar junção LEFT JOIN e acumular KPIs
+    rows = []
+    base_total = 0.0
+    base_count = 0
+    anal_total = 0.0
+    anal_count = 0
+    
+    for r in base_rows:
+        if not r.cnpj:
+            continue
+        b_val = r.base_val or 0.0
+        b_unid = r.base_unid or 0.0
+        b_mix = r.base_mix or 0
+        
+        base_total += b_val
+        base_count += 1
+        
+        a_data = anal_map.get(r.cnpj, {"anal_val": 0.0, "anal_unid": 0.0})
+        a_val = a_data["anal_val"]
+        a_unid = a_data["anal_unid"]
+        
+        if a_val > 0:
+            anal_total += a_val
+            anal_count += 1
+            
+        rows.append({
+            "cnpj": r.cnpj,
+            "cliente": r.cliente or "Desconhecido",
+            "base_val": b_val,
+            "base_unid": b_unid,
+            "base_mix": b_mix,
+            "anal_val": a_val,
+            "anal_unid": a_unid
+        })
+        
+    return jsonify({
+        "base_count": base_count,
+        "base_total": base_total,
+        "anal_count": anal_count,
+        "anal_total": anal_total,
+        "rows": rows
+    })
+
 
 # ---- PAINEL ADMINISTRATIVO (ADMIN_ROUTES) ----
 

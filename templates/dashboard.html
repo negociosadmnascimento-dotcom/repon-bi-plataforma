@@ -562,107 +562,174 @@
                 <tbody>
                     <!-- Javascript -->
                 </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<!-- 5. Decisão Comercial (Comparador de filtros) -->
+ <!-- 5. Decisão Comercial (Comparador de bases) -->
 <div id="tab-decisao_comercial" class="tab-content" style="display: none;">
     <div style="margin-bottom: 1.5rem;" class="glass-panel">
         <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 0.5rem;"><i class="fa-solid fa-shuffle"></i> Comparador Comercial de Bases</h3>
         <p style="color: var(--text-secondary); font-size: 0.85rem;">Escolha parâmetros de filtros diferentes em cada painel abaixo e clique em "Gerar Cruzamento" para comparar.</p>
     </div>
     
-    <div class="comparison-layout">
+    <!-- Painéis de Filtros e KPIs -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
         <!-- Base Padrão -->
-        <div class="comparison-panel primary">
-            <div class="comparison-title">Base Padrão — Filtro Superior</div>
-            <p style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 1.5rem;">
-                Esta base será a referência de comparação. De acordo com o filtro aplicado, ela contém CNPJ, Razão Social, Faturamento, Mix, Ticket Médio e Share %.
-            </p>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="filter-group">
-                    <label>Distribuidor</label>
-                    <select class="filter-select" id="comp-dist-1"><option>Todos</option></select>
-                </div>
-                <div class="filter-group">
-                    <label>Indústria</label>
-                    <select class="filter-select" id="comp-ind-1"><option>Todas</option></select>
-                </div>
-                <div class="filter-group">
-                    <label>Supervisor</label>
-                    <select class="filter-select" id="comp-sup-1"><option>Todos</option></select>
-                </div>
-                <div class="filter-group">
-                    <label>Produto</label>
-                    <select class="filter-select" id="comp-prod-1"><option>Todos</option></select>
-                </div>
+        <div class="glass-panel" style="border-left: 3px solid #6ea3ff; position: relative;">
+            <div style="background: linear-gradient(135deg,rgba(99,102,241,0.08),rgba(14,30,60,0.2)); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
+                <span style="font-size: 0.75rem; font-weight: 800; color: #6ea3ff; text-transform: uppercase; letter-spacing: 0.05em; display:block; margin-bottom:4px;">🔵 BASE PADRÃO — Filtro Superior</span>
+                <span style="font-size: 0.7rem; color: var(--text-secondary); line-height: 1.4;">Esta base será a referência de comparação. Conforme os filtros aplicados, ela lista CNPJs, faturamento, mix e ticket médio.</span>
             </div>
             
-            <div class="kpis-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
-                <div class="kpi-card" style="padding: 1rem;">
-                    <div class="kpi-title-row" style="font-size: 0.65rem;">CNPJs</div>
-                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-cnpj-1">0</div>
+            <!-- Linha de Filtros (Multi-selects customizados) -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                <div class="cb-filter-group-wrap" id="comp-dist-1-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-ind-1-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-sup-1-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-prod-1-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-ano-1-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-mes-1-group"></div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                <div class="kpi-card" style="padding: 10px; min-height: unset; background: rgba(255,255,255,0.01);">
+                    <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight:700;">CNPJs na Base</div>
+                    <div style="font-size: 1.15rem; font-weight: 800;" id="comp-kpi-cnpj-1">0</div>
                 </div>
-                <div class="kpi-card" style="padding: 1rem;">
-                    <div class="kpi-title-row" style="font-size: 0.65rem;">Faturamento</div>
-                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-fat-1">R$ 0,00</div>
+                <div class="kpi-card" style="padding: 10px; min-height: unset; background: rgba(255,255,255,0.01);">
+                    <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight:700;">Faturamento</div>
+                    <div style="font-size: 1.15rem; font-weight: 800;" id="comp-kpi-fat-1">R$ 0,00</div>
                 </div>
-                <div class="kpi-card" style="padding: 1rem;">
-                    <div class="kpi-title-row" style="font-size: 0.65rem;">Ticket Médio</div>
-                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-ticket-1">R$ 0,00</div>
+                <div class="kpi-card" style="padding: 10px; min-height: unset; background: rgba(255,255,255,0.01);">
+                    <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight:700;">Ticket Médio</div>
+                    <div style="font-size: 1.15rem; font-weight: 800;" id="comp-kpi-ticket-1">R$ 0,00</div>
                 </div>
             </div>
         </div>
         
         <!-- Base Análise -->
-        <div class="comparison-panel secondary">
-            <div class="comparison-title">Base Análise — Filtro Secundário</div>
-            <p style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 1.5rem;">
-                Esta base entrará para cruzamento. Escolha o que quer comparar. As informações puxadas serão: Faturamento R$, Faturamento Unidades e Ticket Médio.
-            </p>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="filter-group">
-                    <label>Distribuidor</label>
-                    <select class="filter-select" id="comp-dist-2"><option>Todos</option></select>
-                </div>
-                <div class="filter-group">
-                    <label>Indústria</label>
-                    <select class="filter-select" id="comp-ind-2"><option>Todas</option></select>
-                </div>
-                <div class="filter-group">
-                    <label>Supervisor</label>
-                    <select class="filter-select" id="comp-sup-2"><option>Todos</option></select>
-                </div>
-                <div class="filter-group">
-                    <label>Produto</label>
-                    <select class="filter-select" id="comp-prod-2"><option>Todos</option></select>
-                </div>
+        <div class="glass-panel" style="border-left: 3px solid #ff7055; position: relative;">
+            <div style="background: linear-gradient(135deg,rgba(239,68,68,0.08),rgba(14,30,60,0.2)); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;">
+                <span style="font-size: 0.75rem; font-weight: 800; color: #ff7055; text-transform: uppercase; letter-spacing: 0.05em; display:block; margin-bottom:4px;">🔴 BASE ANÁLISE — Filtro Secundário</span>
+                <span style="font-size: 0.7rem; color: var(--text-secondary); line-height: 1.4;">Esta base será cruzada com a referência. O resultado exibirá o faturamento cruzado, unidades faturadas e status de compra.</span>
             </div>
             
-            <div class="kpis-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
-                <div class="kpi-card secondary" style="padding: 1rem;">
-                    <div class="kpi-title-row" style="font-size: 0.65rem;">CNPJs</div>
-                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-cnpj-2">0</div>
+            <!-- Linha de Filtros (Multi-selects customizados) -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                <div class="cb-filter-group-wrap" id="comp-dist-2-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-ind-2-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-prod-2-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-sup-2-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-vend-2-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-cli-2-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-ano-2-group"></div>
+                <div class="cb-filter-group-wrap" id="comp-mes-2-group"></div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                <div class="kpi-card" style="padding: 10px; min-height: unset; background: rgba(255,255,255,0.01);">
+                    <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight:700;">CNPJs na Base</div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: #ff7055;" id="comp-kpi-cnpj-2">0</div>
                 </div>
-                <div class="kpi-card secondary" style="padding: 1rem;">
-                    <div class="kpi-title-row" style="font-size: 0.65rem;">Faturamento</div>
-                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-fat-2">R$ 0,00</div>
+                <div class="kpi-card" style="padding: 10px; min-height: unset; background: rgba(255,255,255,0.01);">
+                    <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight:700;">Faturamento</div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: #ff7055;" id="comp-kpi-fat-2">R$ 0,00</div>
                 </div>
-                <div class="kpi-card secondary" style="padding: 1rem;">
-                    <div class="kpi-title-row" style="font-size: 0.65rem;">Ticket Médio</div>
-                    <div class="kpi-value" style="font-size: 1.2rem;" id="comp-kpi-ticket-2">R$ 0,00</div>
+                <div class="kpi-card" style="padding: 10px; min-height: unset; background: rgba(255,255,255,0.01);">
+                    <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; font-weight:700;">Ticket Médio</div>
+                    <div style="font-size: 1.15rem; font-weight: 800; color: #ff7055;" id="comp-kpi-ticket-2">R$ 0,00</div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div style="text-align: center; margin-top: 2rem;">
-        <button class="btn" onclick="executeComparison()"><i class="fa-solid fa-bolt"></i> Gerar Cruzamento de Dados</button>
+    <!-- Botões de Ação -->
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button class="btn" onclick="runComparison()" id="btn-gerar-cruzamento" style="background: linear-gradient(135deg,#e63312,#ff4422); border:none;"><i class="fa-solid fa-bolt"></i> Gerar Cruzamento</button>
+        <button class="btn btn-secondary" onclick="clearComparisonFilters()" style="background: rgba(255,255,255,0.04); border-color: var(--border-color);"><i class="fa-solid fa-xmark"></i> Limpar Filtros</button>
     </div>
+    
+    <!-- Painel de Visualização com KPIs do Cruzamento e Tabela -->
+    <div id="cruzamento-painel-resultado" style="display: none;">
+        <div style="text-align: center; margin-bottom: 18px; margin-top:30px;">
+            <div style="font-size: 1.1rem; font-weight: 900; color: var(--text-primary); letter-spacing: .05em; text-transform: uppercase;">PAINEL DE VISUALIZAÇÃO</div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px;">
+            <div class="kpi-card" style="border-top: 3px solid #6ea3ff; background: var(--bg-card); padding:1.25rem;">
+                <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom:6px;">Total CNPJs Ativos</div>
+                <div style="font-size: 1.6rem; font-weight: 800;" id="cross-kpi-cnpj">0</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top:4px;">Com compra na Base Análise</div>
+            </div>
+            <div class="kpi-card" style="border-top: 3px solid #22c97a; background: var(--bg-card); padding:1.25rem;">
+                <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom:6px;">Total Faturamento Cruzado</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color:#22c97a;" id="cross-kpi-fat">R$ 0,00</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top:4px;">Fat. acumulado no cruzamento</div>
+            </div>
+            <div class="kpi-card" style="border-top: 3px solid #f5c842; background: var(--bg-card); padding:1.25rem;">
+                <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom:6px;">Total Unidades Cruzadas</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color:#f5c842;" id="cross-kpi-unid">0</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top:4px;">Unidades faturadas cruzadas</div>
+            </div>
+            <div class="kpi-card" style="border-top: 3px solid #e63312; background: var(--bg-card); padding:1.25rem;">
+                <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; margin-bottom:6px;">Oportunidade (Inativos × Ticket Médio)</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color:#e63312;" id="cross-kpi-oportunidade">R$ 0,00</div>
+                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top:4px;">Projeção de compra dos inativos</div>
+            </div>
+        </div>
+        
+        <!-- Toggle Ativo/Inativo local da tabela -->
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); padding: 10px 15px; border-radius: 8px;">
+            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase;">Status de Compra:</span>
+            <div style="display: flex; gap: 8px;">
+                <button class="admin-tab-btn active" id="btn-filter-cross-all" onclick="filterCrossTableLocal('TODOS')" style="padding: 4px 12px; font-size: 0.75rem; height: auto;">Todos (<span id="count-cross-all">0</span>)</button>
+                <button class="admin-tab-btn" id="btn-filter-cross-active" onclick="filterCrossTableLocal('ATIVO')" style="padding: 4px 12px; font-size: 0.75rem; height: auto; color:#22c97a; border-color:rgba(34,201,122,0.2);">✔ Ativos (<span id="count-cross-active">0</span>)</button>
+                <button class="admin-tab-btn" id="btn-filter-cross-inactive" onclick="filterCrossTableLocal('INATIVO')" style="padding: 4px 12px; font-size: 0.75rem; height: auto; color:#e63312; border-color:rgba(230,51,18,0.2);">✘ Inativos (<span id="count-cross-inactive">0</span>)</button>
+            </div>
+        </div>
+        
+        <!-- Tabela Cruzada -->
+        <div class="table-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 1rem; padding: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;">cruzamento de bases</h3>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div class="search-bar-premium">
+                        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-secondary);"></i>
+                        <input type="text" id="search-cross-table" placeholder="Buscar por CNPJ ou Razão Social..." oninput="filterCrossTableSearchLocal()">
+                    </div>
+                    <button class="btn btn-secondary" onclick="exportCrossTableToExcel()" style="padding: 0.5rem 1rem; font-size: 0.85rem; height: 38px; display: flex; align-items: center; gap: 0.25rem;">
+                        <i class="fa-solid fa-file-excel" style="color: var(--success);"></i> Exportar Excel
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-responsive-container" style="max-height: 480px; overflow-y: auto;">
+                <table class="premium-data-table" id="table-cruzamento-bases">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border-color);">
+                            <th rowspan="2" style="text-align: center; vertical-align: middle;">#</th>
+                            <th rowspan="2" style="vertical-align: middle;">CNPJ</th>
+                            <th rowspan="2" style="vertical-align: middle; max-width: 200px;">Razão Social</th>
+                            <th colspan="5" style="text-align: center; background: rgba(99, 102, 241, 0.05); color:#6ea3ff; font-weight: 800;">BASE PADRÃO (REFERÊNCIA)</th>
+                            <th colspan="3" style="text-align: center; background: rgba(239, 68, 68, 0.05); color:#ff7055; font-weight: 800;">BASE ANÁLISE</th>
+                            <th rowspan="2" style="text-align: center; vertical-align: middle;">Status</th>
+                        </tr>
+                        <tr>
+                            <!-- Base Padrão Headers -->
+                            <th onclick="sortCrossTableLocal('base_val')" style="cursor: pointer; text-align: right; background: rgba(99, 102, 241, 0.03);">Fat. Total R$ <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="sortCrossTableLocal('base_unid')" style="cursor: pointer; text-align: center; background: rgba(99, 102, 241, 0.03);">Fat. Unid. <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="sortCrossTableLocal('base_mix')" style="cursor: pointer; text-align: center; background: rgba(99, 102, 241, 0.03);">Mix (SKUs) <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="sortCrossTableLocal('ticket_base')" style="cursor: pointer; text-align: right; background: rgba(99, 102, 241, 0.03);">Ticket Médio <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="sortCrossTableLocal('share')" style="cursor: pointer; text-align: center; background: rgba(99, 102, 241, 0.03);">Share % <i class="fa-solid fa-sort"></i></th>
+                            <!-- Base Análise Headers -->
+                            <th onclick="sortCrossTableLocal('anal_val')" style="cursor: pointer; text-align: right; background: rgba(239, 68, 68, 0.03);">Faturado R$ <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="sortCrossTableLocal('anal_unid')" style="cursor: pointer; text-align: center; background: rgba(239, 68, 68, 0.03);">Fat. Unid. <i class="fa-solid fa-sort"></i></th>
+                            <th onclick="sortCrossTableLocal('ticket_anal')" style="cursor: pointer; text-align: right; background: rgba(239, 68, 68, 0.03);">Ticket Médio <i class="fa-solid fa-sort"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Preenchido dinamicamente via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
 </div>
 
 <!-- 6. Simulador de Ofertas -->
@@ -1605,45 +1672,465 @@
         });
     }
 
+    // Estado Global para Comparação / Cruzamento de Bases
+    let crossDataList = [];
+    let crossTableFiltered = [];
+    let crossSortKey = "base_val";
+    let crossSortDir = "desc";
+    let currentCrossStatusFilter = "TODOS";
+    let compSelects = {};
+
+    // Helper de Formatação local
+    function formatCurr(val) {
+        return 'R$ ' + parseFloat(val || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function formatInt(val) {
+        return parseInt(val || 0).toLocaleString('pt-BR');
+    }
+
+    // Inicializador de Multi-select customizado com busca
+    function initMultiSelect(containerId, label, optionsList, onToggleCallback) {
+        const container = document.getElementById(containerId);
+        if (!container) return null;
+        
+        let selectedValues = [];
+        container.style.width = "150px";
+        container.style.flex = "1 1 140px";
+        
+        container.innerHTML = `
+            <label style="font-size: 0.65rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display:block; margin-bottom:4px;">${label}</label>
+            <div class="cb-filter-btn-container" style="position:relative; width: 100%;">
+                <button class="cb-filter-btn" type="button" style="width:100%; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:8px 10px; color:#fff; font-size:0.75rem; cursor:pointer; text-align:left; font-family:inherit;">
+                    <span class="cb-filter-btn-text" style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Todos</span>
+                    <span style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                        <span class="cb-multi-badge" style="display:none; background:rgba(99,102,241,0.15); color:#818cf8; border-radius:4px; font-size:0.6rem; padding:1px 5px; font-weight:700; cursor:pointer;">0 ✕</span>
+                        <span class="cb-filter-btn-arrow" style="font-size:0.55rem; color:var(--text-muted);">▼</span>
+                    </span>
+                </button>
+                <div class="cb-filter-dropdown" style="display:none; position:absolute; left:0; top:calc(100% + 4px); background:#0d1a32; border:1px solid rgba(110,163,255,0.2); border-radius:8px; z-index:999; min-width:100%; width:max-content; max-width:320px; box-shadow:0 12px 40px rgba(0,0,0,0.5); overflow:hidden;">
+                    <div class="cb-filter-search-wrap" style="display:flex; align-items:center; gap:6px; padding:6px 10px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <span style="font-size:0.75rem;">🔍</span>
+                        <input class="cb-filter-search-input" placeholder="Pesquisar..." style="flex:1; background:none; border:none; outline:none; color:#e0eaff; font-size:0.75rem; font-family:inherit;">
+                    </div>
+                    <div class="cb-filter-options" style="max-height:200px; overflow-y:auto; padding:4px;">
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const btn = container.querySelector('.cb-filter-btn');
+        const dropdown = container.querySelector('.cb-filter-dropdown');
+        const searchInput = container.querySelector('.cb-filter-search-input');
+        const optionsContainer = container.querySelector('.cb-filter-options');
+        const badge = container.querySelector('.cb-multi-badge');
+        const btnText = container.querySelector('.cb-filter-btn-text');
+        
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = dropdown.style.display === 'block';
+            document.querySelectorAll('.cb-filter-dropdown').forEach(d => d.style.display = 'none');
+            dropdown.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) searchInput.focus();
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!container.contains(e.target)) dropdown.style.display = 'none';
+        });
+        
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+            optionsContainer.querySelectorAll('.cb-filter-option').forEach(el => {
+                const labelText = el.textContent.toLowerCase();
+                el.style.display = labelText.includes(query) ? 'flex' : 'none';
+            });
+        });
+        
+        badge.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectedValues = [];
+            updateUI();
+            renderOptions();
+            if (onToggleCallback) onToggleCallback(selectedValues);
+        });
+        
+        function renderOptions() {
+            optionsContainer.innerHTML = '';
+            if (!optionsList || optionsList.length === 0) {
+                optionsContainer.innerHTML = '<div style="padding:8px; text-align:center; color:var(--text-muted); font-size:0.75rem;">Nenhum item</div>';
+                return;
+            }
+            
+            optionsList.forEach(opt => {
+                const isSelected = selectedValues.includes(opt);
+                const el = document.createElement('div');
+                el.className = `cb-filter-option ${isSelected ? 'cb-filter-option-selected' : ''}`;
+                el.style.cssText = `display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:6px; font-size:0.75rem; color:var(--text-secondary); cursor:pointer; transition:background 0.1s;`;
+                
+                const chk = document.createElement('span');
+                chk.style.cssText = `width:13px; height:13px; border-radius:3px; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:0.6rem; color:#818cf8; font-weight:900; background:${isSelected ? 'rgba(99,102,241,0.15)' : 'transparent'}; border-color:${isSelected ? '#6366f1' : 'rgba(255,255,255,0.2)'};`;
+                chk.textContent = isSelected ? '✓' : '';
+                
+                el.appendChild(chk);
+                
+                const txt = document.createElement('span');
+                txt.textContent = opt;
+                el.appendChild(txt);
+                
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (selectedValues.includes(opt)) {
+                        selectedValues = selectedValues.filter(v => v !== opt);
+                    } else {
+                        selectedValues.push(opt);
+                    }
+                    updateUI();
+                    renderOptions();
+                    if (onToggleCallback) onToggleCallback(selectedValues);
+                });
+                
+                optionsContainer.appendChild(el);
+            });
+        }
+        
+        function updateUI() {
+            if (selectedValues.length === 0) {
+                btnText.textContent = 'Todos';
+                badge.style.display = 'none';
+                btn.style.borderColor = 'rgba(255,255,255,0.08)';
+            } else if (selectedValues.length === 1) {
+                btnText.textContent = selectedValues[0];
+                badge.textContent = `1 ✕`;
+                badge.style.display = 'inline-block';
+                btn.style.borderColor = 'var(--primary)';
+            } else {
+                btnText.textContent = `${selectedValues.length} selecionados`;
+                badge.textContent = `${selectedValues.length} ✕`;
+                badge.style.display = 'inline-block';
+                btn.style.borderColor = 'var(--primary)';
+            }
+        }
+        
+        renderOptions();
+        
+        return {
+            getSelected: () => selectedValues,
+            setSelected: (vals) => {
+                selectedValues = vals;
+                updateUI();
+                renderOptions();
+            },
+            updateOptions: (newOpts) => {
+                optionsList = newOpts;
+                selectedValues = selectedValues.filter(v => optionsList.includes(v));
+                updateUI();
+                renderOptions();
+            }
+        };
+    }
+
     // Métodos para Comparação de Bases
     function loadComparisonFilters() {
+        // Obter os filtros e instanciar os selectos
         fetch("/api/filters/{{ service }}")
             .then(res => res.json())
             .then(data => {
-                ["1", "2"].forEach(suffix => {
-                    populateSelect("comp-dist-" + suffix, data.distribuidores, "Todos");
-                    populateSelect("comp-ind-" + suffix, data.industrias, "Todas");
-                    populateSelect("comp-sup-" + suffix, data.supervisores, "Todos");
-                    populateSelect("comp-prod-" + suffix, data.produtos, "Todos");
-                });
+                // Instanciar Base 1 (Referência)
+                compSelects.dist1 = initMultiSelect("comp-dist-1-group", "Distribuidor", data.distribuidores, () => updateCompareKPIs("1"));
+                compSelects.ind1 = initMultiSelect("comp-ind-1-group", "Indústria", data.industrias, () => updateCompareKPIs("1"));
+                compSelects.sup1 = initMultiSelect("comp-sup-1-group", "Supervisor", data.supervisores, () => updateCompareKPIs("1"));
+                compSelects.prod1 = initMultiSelect("comp-prod-1-group", "Produto", data.produtos, () => updateCompareKPIs("1"));
+                compSelects.ano1 = initMultiSelect("comp-ano-1-group", "Ano", data.anos, () => updateCompareKPIs("1"));
+                compSelects.mes1 = initMultiSelect("comp-mes-1-group", "Mês", data.meses, () => updateCompareKPIs("1"));
+
+                // Instanciar Base 2 (Análise)
+                compSelects.dist2 = initMultiSelect("comp-dist-2-group", "Distribuidor", data.distribuidores, () => updateCompareKPIs("2"));
+                compSelects.ind2 = initMultiSelect("comp-ind-2-group", "Indústria", data.industrias, () => updateCompareKPIs("2"));
+                compSelects.prod2 = initMultiSelect("comp-prod-2-group", "Produto", data.produtos, () => updateCompareKPIs("2"));
+                compSelects.sup2 = initMultiSelect("comp-sup-2-group", "Supervisor", data.supervisores, () => updateCompareKPIs("2"));
+                compSelects.vend2 = initMultiSelect("comp-vend-2-group", "Vendedor", data.vendedores, () => updateCompareKPIs("2"));
+                compSelects.cli2 = initMultiSelect("comp-cli-2-group", "Razão Social", data.clientes, () => updateCompareKPIs("2"));
+                compSelects.ano2 = initMultiSelect("comp-ano-2-group", "Ano", data.anos, () => updateCompareKPIs("2"));
+                compSelects.mes2 = initMultiSelect("comp-mes-2-group", "Mês", data.meses, () => updateCompareKPIs("2"));
+
+                // Atualizar KPIs das duas bases inicialmente
+                updateCompareKPIs("1");
+                updateCompareKPIs("2");
             });
     }
 
-    function executeComparison() {
-        const fetchBaseData = (suffix) => {
-            const filters = {
-                distribuidor: document.getElementById("comp-dist-" + suffix).value,
-                industria: document.getElementById("comp-ind-" + suffix).value,
-                supervisor: document.getElementById("comp-sup-" + suffix).value,
-                produto: document.getElementById("comp-prod-" + suffix).value
-            };
-            return fetch("/api/data/{{ service }}", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(filters)
-            }).then(res => res.json());
+    // Atualiza os painéis KPI locais de cada base separada antes do cruzamento
+    function updateCompareKPIs(suffix) {
+        const filters = {
+            distribuidor: compSelects["dist" + suffix]?.getSelected() || [],
+            industria: compSelects["ind" + suffix]?.getSelected() || [],
+            supervisor: compSelects["sup" + suffix]?.getSelected() || [],
+            produto: compSelects["prod" + suffix]?.getSelected() || [],
+            vendedor: suffix === "2" ? (compSelects.vend2?.getSelected() || []) : [],
+            cliente: suffix === "2" ? (compSelects.cli2?.getSelected() || []) : [],
+            ano: compSelects["ano" + suffix]?.getSelected() || [],
+            mes: compSelects["mes" + suffix]?.getSelected() || []
         };
 
-        Promise.all([fetchBaseData("1"), fetchBaseData("2")])
-            .then(([res1, res2]) => {
-                document.getElementById("comp-kpi-cnpj-1").innerText = res1.kpis.cnpjs;
-                document.getElementById("comp-kpi-fat-1").innerText = res1.kpis.faturamento;
-                document.getElementById("comp-kpi-ticket-1").innerText = res1.kpis.ticket_medio;
-                
-                document.getElementById("comp-kpi-cnpj-2").innerText = res2.kpis.cnpjs;
-                document.getElementById("comp-kpi-fat-2").innerText = res2.kpis.faturamento;
-                document.getElementById("comp-kpi-ticket-2").innerText = res2.kpis.ticket_medio;
+        // Utilizar o endpoint geral de dados filtrado para calcular os KPIs da base individual
+        fetch("/api/data/{{ service }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(filters)
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById(`comp-kpi-cnpj-${suffix}`).innerText = data.kpis.cnpjs;
+            document.getElementById(`comp-kpi-fat-${suffix}`).innerText = data.kpis.faturamento;
+            document.getElementById(`comp-kpi-ticket-${suffix}`).innerText = data.kpis.ticket_medio;
+        });
+    }
+
+    // Limpar todos os filtros da aba de comparação
+    function clearComparisonFilters() {
+        ["dist1", "ind1", "sup1", "prod1", "ano1", "mes1", "dist2", "ind2", "prod2", "sup2", "vend2", "cli2", "ano2", "mes2"].forEach(key => {
+            if (compSelects[key]) compSelects[key].setSelected([]);
+        });
+        updateCompareKPIs("1");
+        updateCompareKPIs("2");
+        document.getElementById("cruzamento-painel-resultado").style.display = "none";
+    }
+
+    // Executa a chamada de cruzamento de bases no backend Python
+    function runComparison() {
+        const btn = document.getElementById("btn-gerar-cruzamento");
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
+
+        const payload = {
+            base: {
+                distribuidor: compSelects.dist1?.getSelected() || [],
+                industria: compSelects.ind1?.getSelected() || [],
+                supervisor: compSelects.sup1?.getSelected() || [],
+                produto: compSelects.prod1?.getSelected() || [],
+                ano: compSelects.ano1?.getSelected() || [],
+                mes: compSelects.mes1?.getSelected() || []
+            },
+            analise: {
+                distribuidor: compSelects.dist2?.getSelected() || [],
+                industria: compSelects.ind2?.getSelected() || [],
+                produto: compSelects.prod2?.getSelected() || [],
+                supervisor: compSelects.sup2?.getSelected() || [],
+                vendedor: compSelects.vend2?.getSelected() || [],
+                cliente: compSelects.cli2?.getSelected() || [],
+                ano: compSelects.ano2?.getSelected() || [],
+                mes: compSelects.mes2?.getSelected() || []
+            }
+        };
+
+        fetch("/api/cruzamento/{{ service }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Gerar Cruzamento';
+
+            crossDataList = data.rows || [];
+            
+            // Exibir contadores do Painel de Visualização
+            document.getElementById("cross-kpi-cnpj").innerText = formatInt(data.anal_count);
+            document.getElementById("cross-kpi-fat").innerText = formatCurr(data.anal_total);
+            
+            // Calcular Unidades Cruzadas
+            let crossUnits = 0;
+            crossDataList.forEach(r => {
+                if (r.anal_val > 0) crossUnits += r.anal_unid;
             });
+            document.getElementById("cross-kpi-unid").innerText = formatInt(crossUnits);
+            
+            // Oportunidade = (CNPJs Inativos) * (Ticket Médio da Base Análise)
+            let activeCNPJsCount = data.anal_count;
+            let inactiveCNPJsCount = data.base_count - activeCNPJsCount;
+            let ticketMedioAnal = activeCNPJsCount > 0 ? (data.anal_total / activeCNPJsCount) : 0;
+            let oportunidade = inactiveCNPJsCount * ticketMedioAnal;
+            document.getElementById("cross-kpi-oportunidade").innerText = formatCurr(oportunidade);
+
+            // Mostrar painel de resultados
+            document.getElementById("cruzamento-painel-resultado").style.display = "block";
+            
+            // Renderizar tabela e contadores locais
+            filterCrossTableLocal('TODOS');
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Gerar Cruzamento';
+            console.error(err);
+            alert("Erro ao executar cruzamento de bases.");
+        });
+    }
+
+    // Filtros Locais (Todos, Ativos, Inativos)
+    function filterCrossTableLocal(status) {
+        currentCrossStatusFilter = status;
+        
+        // Atualizar abas/botões ativos
+        document.getElementById("btn-filter-cross-all").classList.remove("active");
+        document.getElementById("btn-filter-cross-active").classList.remove("active");
+        document.getElementById("btn-filter-cross-inactive").classList.remove("active");
+        
+        if (status === 'TODOS') document.getElementById("btn-filter-cross-all").classList.add("active");
+        if (status === 'ATIVO') document.getElementById("btn-filter-cross-active").classList.add("active");
+        if (status === 'INATIVO') document.getElementById("btn-filter-cross-inactive").classList.add("active");
+
+        // Atualizar badge counters
+        document.getElementById("count-cross-all").innerText = crossDataList.length;
+        document.getElementById("count-cross-active").innerText = crossDataList.filter(r => r.anal_val > 0).length;
+        document.getElementById("count-cross-inactive").innerText = crossDataList.filter(r => r.anal_val === 0).length;
+
+        filterCrossTableSearchLocal();
+    }
+
+    // Filtro de busca local
+    function filterCrossTableSearchLocal() {
+        const query = document.getElementById("search-cross-table").value.toLowerCase().trim();
+        
+        let filtered = crossDataList;
+        
+        // Aplicar status filter
+        if (currentCrossStatusFilter === 'ATIVO') {
+            filtered = filtered.filter(r => r.anal_val > 0);
+        } else if (currentCrossStatusFilter === 'INATIVO') {
+            filtered = filtered.filter(r => r.anal_val === 0);
+        }
+        
+        // Aplicar busca por CNPJ ou Razão Social
+        if (query.length > 0) {
+            filtered = filtered.filter(r => 
+                r.cnpj.toLowerCase().includes(query) || 
+                r.cliente.toLowerCase().includes(query)
+            );
+        }
+        
+        crossTableFiltered = filtered;
+        sortAndRenderCrossTable();
+    }
+
+    // Ordenação e Renderização local
+    function sortCrossTableLocal(key) {
+        if (crossSortKey === key) {
+            crossSortDir = crossSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            crossSortKey = key;
+            crossSortDir = 'desc';
+        }
+        sortAndRenderCrossTable();
+    }
+
+    function sortAndRenderCrossTable() {
+        const key = crossSortKey;
+        const dir = crossSortDir;
+        
+        crossTableFiltered.sort((a, b) => {
+            let valA = a[key];
+            let valB = b[key];
+            
+            // Tratamento especial para chaves derivadas
+            if (key === 'ticket_base') {
+                valA = a.base_unid > 0 ? a.base_val / a.base_unid : 0;
+                valB = b.base_unid > 0 ? b.base_val / b.base_unid : 0;
+            } else if (key === 'ticket_anal') {
+                valA = a.anal_unid > 0 ? a.anal_val / a.anal_unid : 0;
+                valB = b.anal_unid > 0 ? b.anal_val / b.anal_unid : 0;
+            } else if (key === 'share') {
+                valA = a.base_val;
+                valB = b.base_val;
+            }
+            
+            if (typeof valA === 'string') {
+                return dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else {
+                return dir === 'asc' ? valA - valB : valB - valA;
+            }
+        });
+        
+        renderCrossTableUI();
+    }
+
+    function renderCrossTableUI() {
+        const tbody = document.querySelector("#table-cruzamento-bases tbody");
+        tbody.innerHTML = "";
+        
+        if (crossTableFiltered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhum registro encontrado no cruzamento.</td></tr>';
+            return;
+        }
+
+        // Faturamento total da Base 1 para calcular Share % individual
+        let totalBaseFat = 0.0;
+        crossDataList.forEach(r => totalBaseFat += r.base_val);
+
+        let html = "";
+        crossTableFiltered.forEach((r, idx) => {
+            const isAct = r.anal_val > 0;
+            const tBase = r.base_unid > 0 ? r.base_val / r.base_unid : 0;
+            const tAnal = r.anal_unid > 0 ? r.anal_val / r.anal_unid : 0;
+            const share = totalBaseFat > 0 ? ((r.base_val / totalBaseFat) * 100).toFixed(2) + '%' : '0.00%';
+            
+            html += `
+                <tr class="${isAct ? 'cb-row-ativo' : 'cb-row-inativo'}" style="border-bottom: 1px solid rgba(255,255,255,0.02); opacity: ${isAct ? 1 : 0.85};">
+                    <td style="text-align: center; color: var(--text-muted); font-weight:700;">${idx + 1}</td>
+                    <td style="font-family: monospace; color:#6ea3ff;">${r.cnpj}</td>
+                    <td style="font-weight: 600; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${r.cliente}">${r.cliente}</td>
+                    
+                    <!-- Base Padrão -->
+                    <td style="text-align: right; font-weight: 700; color: var(--text-primary); background: rgba(99, 102, 241, 0.01);">${formatCurr(r.base_val)}</td>
+                    <td style="text-align: center; background: rgba(99, 102, 241, 0.01);">${formatInt(r.base_unid)}</td>
+                    <td style="text-align: center; background: rgba(99, 102, 241, 0.01);">${r.base_mix} SKUs</td>
+                    <td style="text-align: right; background: rgba(99, 102, 241, 0.01);">${formatCurr(tBase)}</td>
+                    <td style="text-align: center; background: rgba(99, 102, 241, 0.01);">${share}</td>
+                    
+                    <!-- Base Análise -->
+                    <td style="text-align: right; font-weight: 700; color: ${isAct ? '#22c97a' : 'var(--text-muted)'}; background: rgba(239, 68, 68, 0.01);">${isAct ? formatCurr(r.anal_val) : '—'}</td>
+                    <td style="text-align: center; background: rgba(239, 68, 68, 0.01);">${isAct ? formatInt(r.anal_unid) : '—'}</td>
+                    <td style="text-align: right; background: rgba(239, 68, 68, 0.01);">${isAct ? formatCurr(tAnal) : '—'}</td>
+                    
+                    <!-- Status -->
+                    <td style="text-align: center; background: rgba(124, 58, 237, 0.02);">
+                        <span class="badge-premium ${isAct ? 'badge-premium-high' : 'badge-premium-low'}" style="font-size: 0.65rem;">
+                            ${isAct ? 'ATIVO' : 'INATIVO'}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    // Exportar Tabela Cruzada para CSV Excel
+    function exportCrossTableToExcel() {
+        const table = document.getElementById("table-cruzamento-bases");
+        if (!table) return;
+        
+        let csv = [];
+        const rows = table.querySelectorAll("tr");
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 0; j < cols.length; j++) {
+                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "").replace(/"/g, '""').trim();
+                data = data.replace(" ▲", "").replace(" ▼", "").replace(" ⇅", "");
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(";"));
+        }
+        
+        const csvString = "\uFEFF" + csv.join("\n");
+        const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "cruzamento_bases_" + new Date().toISOString().slice(0,10) + ".csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     // Métodos do Simulador de Ofertas
