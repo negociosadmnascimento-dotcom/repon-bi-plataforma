@@ -778,299 +778,73 @@ def admin_delete_upload(history_id):
     db.close()
     return redirect(url_for('admin_upload_page'))
 
-@app.route('/admin/upload/chunk', methods=['POST'])
+@app.route('/admin/upload/start', methods=['POST'])
 @admin_required
-def admin_upload_chunk():
-    upload_id = request.form.get('upload_id')
-    chunk_index = int(request.form.get('chunk_index', 0))
-    total_chunks = int(request.form.get('total_chunks', 1))
-    filename = secure_filename(request.form.get('filename', 'file.csv'))
-    chunk_file = request.files.get('file')
-    
-    if not upload_id or chunk_file is None:
-        return jsonify({"success": False, "error": "Parâmetros inválidos."}), 400
-        
-    temp_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'chunks')
-    os.makedirs(temp_dir, exist_ok=True)
-    temp_filepath = os.path.join(temp_dir, f"{upload_id}_{filename}")
-    
-    mode = 'wb' if chunk_index == 0 else 'ab'
-    with open(temp_filepath, mode) as f:
-        f.write(chunk_file.read())
-        
-    if chunk_index == total_chunks - 1:
-        final_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{upload_id}_{filename}")
-        import shutil
-        if os.path.exists(final_filepath):
-            try:
-                os.remove(final_filepath)
-            except:
-                pass
-        shutil.move(temp_filepath, final_filepath)
-        return jsonify({"success": True, "completed": True, "filename": f"{upload_id}_{filename}"})
-        
-    return jsonify({"success": True, "completed": False})
-
-@app.route('/admin/upload/process', methods=['POST'])
-@admin_required
-def admin_upload_process():
-    import uuid
-    import threading
-    
+def admin_upload_start():
     client_id = int(request.form.get('client_id'))
     data_type = request.form.get('data_type')
     
-    uploaded_filename = request.form.get('uploaded_filename')
-    if uploaded_filename:
-        filename = secure_filename(uploaded_filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        if not os.path.exists(filepath):
-            return jsonify({"success": False, "error": "Arquivo não encontrado no servidor."}), 404
-        original_name = filename.split('_', 1)[-1] if '_' in filename else filename
-    else:
-        file = request.files.get('file')
-        if not file or not file.filename:
-            return jsonify({"success": False, "error": "Nenhum arquivo enviado."}), 400
-        original_name = file.filename
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-    
-    # Criar ID único para rastrear o progresso do upload
-    upload_id = str(uuid.uuid4())
-    
-    # Gravar o progresso inicial no banco de dados para compartilhamento stateless (serverless-proof)
+    db = get_db()
     try:
-        db = get_db()
+        if data_type == "Sell Out":
+            db.query(SellOutRow).filter_by(client_id=client_id).delete()
+        else:
+            db.query(SellInRow).filter_by(client_id=client_id).delete()
+        db.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/upload/batch', methods=['POST'])
+@admin_required
+def admin_upload_batch():
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "error": "Dados inválidos."}), 400
+        
+    client_id = int(data.get('client_id'))
+    data_type = data.get('data_type')
+    rows = data.get('rows', [])
+    
+    if not rows:
+        return jsonify({"success": True, "inserted": 0})
+        
+    db = get_db()
+    try:
+        if data_type == "Sell Out":
+            db.bulk_insert_mappings(SellOutRow, rows)
+        else:
+            db.bulk_insert_mappings(SellInRow, rows)
+        db.commit()
+        return jsonify({"success": True, "inserted": len(rows)})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/upload/finalize', methods=['POST'])
+@admin_required
+def admin_upload_finalize():
+    client_id = int(request.form.get('client_id'))
+    data_type = request.form.get('data_type')
+    filename = secure_filename(request.form.get('filename'))
+    total_rows = int(request.form.get('total_rows', 0))
+    
+    db = get_db()
+    try:
         history = UploadHistory(
             client_id=client_id,
-            filename=original_name,
+            filename=filename,
             data_type=data_type,
-            num_rows=0,
-            status="Processando",
-            upload_uuid=upload_id,
-            progress=0,
-            total_rows=0
+            num_rows=total_rows,
+            status="Concluído"
         )
         db.add(history)
         db.commit()
-    except Exception as dberr:
-        print("Erro ao criar registro de progresso no banco:", dberr)
-        
-    UPLOAD_PROGRESS[upload_id] = {
-        "status": "Iniciando",
-        "progress": 0,
-        "current_row": 0,
-        "total_rows": 0,
-        "error": None
-    }
-    
-    # Executar o processador em uma thread paralela para não travar a requisição HTTP (evitando timeout/locks)
-    def run_async_import(uid, cid, path, dtype, orig_name):
-        def update_db_progress(status, progress, current_row=0, total_rows=0, error_msg=None):
-            try:
-                engine = get_engine()
-                Session = sessionmaker(bind=engine)
-                session = Session()
-                history = session.query(UploadHistory).filter_by(upload_uuid=uid).first()
-                if history:
-                    history.status = status
-                    history.progress = progress
-                    history.num_rows = current_row
-                    if total_rows:
-                        history.total_rows = total_rows
-                    if error_msg:
-                        history.error_message = error_msg
-                    session.commit()
-                session.close()
-            except Exception as e:
-                print("Erro ao persistir progresso no banco:", e)
-                
-        try:
-            # 1. Carregar arquivo e calcular tamanho total
-            ext = orig_name.lower().split('.')[-1]
-            UPLOAD_PROGRESS[uid]["status"] = "Lendo arquivo..."
-            UPLOAD_PROGRESS[uid]["progress"] = 10
-            update_db_progress("Lendo arquivo...", 10)
-            
-            if ext == 'csv':
-                try:
-                    df = pd.read_csv(path, sep=';', encoding='utf-8')
-                except UnicodeDecodeError:
-                    df = pd.read_csv(path, sep=';', encoding='latin1')
-            else:
-                df = pd.read_excel(path, engine='openpyxl')
-                
-            total = len(df)
-            UPLOAD_PROGRESS[uid]["total_rows"] = total
-            UPLOAD_PROGRESS[uid]["status"] = "Validando colunas..."
-            UPLOAD_PROGRESS[uid]["progress"] = 20
-            update_db_progress("Validando colunas...", 20, total_rows=total)
-            
-            # Normalizar colunas
-            df.columns = [str(col).strip().upper() for col in df.columns]
-            
-            # Colunas obrigatórias
-            required_cols = ["INDUSTRIA", "DATA", "CNPJ", "RAZAO SOCIAL", "UF", "VALOR FAT.", "UNID. FATURADA", "DISTRIBUIDOR"]
-            missing_cols = [c for c in required_cols if c not in df.columns]
-            if missing_cols:
-                raise ValueError(f"Colunas obrigatórias ausentes no arquivo: {', '.join(missing_cols)}")
-            
-            # 2. Deletar registros antigos do cliente
-            UPLOAD_PROGRESS[uid]["status"] = "Limpando registros anteriores..."
-            UPLOAD_PROGRESS[uid]["progress"] = 30
-            update_db_progress("Limpando registros anteriores...", 30, total_rows=total)
-            
-            # Criar conexão separada para a thread
-            engine = get_engine()
-            Session = sessionmaker(bind=engine)
-            session = Session()
-            
-            try:
-                if dtype == "Sell Out":
-                    session.query(SellOutRow).filter_by(client_id=cid).delete()
-                else:
-                    session.query(SellInRow).filter_by(client_id=cid).delete()
-                session.commit()
-            except Exception as dberr:
-                session.rollback()
-                raise dberr
-                
-            # 3. Iterar e salvar em lotes com bulk_insert_mappings para alta performance e baixo consumo de memória
-            UPLOAD_PROGRESS[uid]["status"] = "Importando registros para o Banco..."
-            update_db_progress("Importando registros para o Banco...", 30, total_rows=total)
-            count = 0
-            batch_size = 5000
-            
-            for start_idx in range(0, total, batch_size):
-                end_idx = min(start_idx + batch_size, total)
-                df_batch = df.iloc[start_idx:end_idx]
-                batch_rows = []
-                
-                for idx, row in df_batch.iterrows():
-                    def val(col_name, default=None, is_num=False):
-                        if col_name not in df.columns:
-                            return default
-                        val_raw = row[col_name]
-                        if pd.isna(val_raw):
-                            return default
-                        if is_num:
-                            try:
-                                val_str = str(val_raw).replace("R$", "").replace(" ", "").strip()
-                                if "," in val_str and "." in val_str:
-                                    val_str = val_str.replace(".", "").replace(",", ".")
-                                elif "," in val_str:
-                                    val_str = val_str.replace(",", ".")
-                                return float(val_str)
-                            except ValueError:
-                                return default
-                        return str(val_raw).strip()
-                    
-                    val_fat = val("VALOR FAT.", 0.0, is_num=True)
-                    unid_fat = val("UNID. FATURADA", 0.0, is_num=True)
-                    share = val("SHARE %", 0.0, is_num=True)
-                    val_ol = val("VALOR OL", 0.0, is_num=True)
-                    ano_val = val("ANO", None, is_num=True)
-                    if ano_val is not None:
-                        ano_val = int(ano_val)
-                    
-                    row_data = {
-                        "client_id": cid,
-                        "industria": val("INDUSTRIA"),
-                        "data": val("DATA"),
-                        "cnpj": val("CNPJ"),
-                        "razao_social": val("RAZAO SOCIAL"),
-                        "id_supervisor": val("ID SUPERVISOR"),
-                        "supervisor": val("SUPERVISOR"),
-                        "id_vendedor": val("ID VENDEDOR"),
-                        "vendedor": val("VENDEDOR"),
-                        "uf": val("UF"),
-                        "ean": val("EAN"),
-                        "material_desc": val("MATERIAL/DESC"),
-                        "unid_faturada": unid_fat,
-                        "valor_fat": val_fat,
-                        "distribuidor": val("DISTRIBUIDOR"),
-                        "ano": ano_val,
-                        "rede": val("REDE"),
-                        "cliente": val("CLIENTE"),
-                        "status_ol": val("STATUS OL"),
-                        "status_manual": val("STATUS MANUAL"),
-                        "valor_ol": val_ol,
-                        "share_percent": share,
-                        "mes": val("MES")
-                    }
-                    batch_rows.append(row_data)
-                
-                if batch_rows:
-                    if dtype == "Sell Out":
-                        session.bulk_insert_mappings(SellOutRow, batch_rows)
-                    else:
-                        session.bulk_insert_mappings(SellInRow, batch_rows)
-                    session.commit()
-                
-                count = end_idx
-                # Atualizar progresso dinâmico (escala entre 30% e 95%)
-                current_prog = 30 + int((count / total) * 65)
-                UPLOAD_PROGRESS[uid]["progress"] = current_prog
-                UPLOAD_PROGRESS[uid]["current_row"] = count
-                update_db_progress("Importando registros para o Banco...", current_prog, current_row=count, total_rows=total)
-                
-            session.close()
-            
-            # Atualizar progresso final de conclusão no banco
-            update_db_progress("Concluído", 100, current_row=count, total_rows=total)
-            
-            UPLOAD_PROGRESS[uid]["status"] = "Concluído"
-            UPLOAD_PROGRESS[uid]["progress"] = 100
-            UPLOAD_PROGRESS[uid]["current_row"] = count
-            
-        except Exception as err:
-            error_str = str(err)
-            UPLOAD_PROGRESS[uid]["status"] = "Erro"
-            UPLOAD_PROGRESS[uid]["error"] = error_str
-            
-            # Atualizar o registro existente no banco de dados para Erro
-            update_db_progress("Erro", 100, error_msg=error_str)
-                
-    # Iniciar a execução assíncrona do parser
-    import pandas as pd # certificar de que pandas esteja disponível na thread
-    threading.Thread(target=run_async_import, args=(upload_id, client_id, filepath, data_type, original_name)).start()
-    
-    return jsonify({"success": True, "upload_id": upload_id})
-
-@app.route('/admin/upload/status/<upload_id>')
-@admin_required
-def admin_upload_status(upload_id):
-    # 1. Tentar ler do banco de dados (stateless/compartilhado)
-    try:
-        db = get_db()
-        history = db.query(UploadHistory).filter_by(upload_uuid=upload_id).first()
-        if history:
-            res = {
-                "status": history.status,
-                "progress": history.progress,
-                "current_row": history.num_rows,
-                "total_rows": history.total_rows,
-                "error": history.error_message
-            }
-            db.close()
-            return jsonify(res)
-        db.close()
+        return jsonify({"success": True})
     except Exception as e:
-        print("Erro ao ler progresso do banco de dados:", e)
-        
-    # 2. Fallback para em-memória local
-    progress = UPLOAD_PROGRESS.get(upload_id)
-    if not progress:
-        # Se não encontrou no banco nem na memória local, retorna Iniciando (evita 404 fatal no frontend)
-        return jsonify({
-            "status": "Iniciando",
-            "progress": 0,
-            "current_row": 0,
-            "total_rows": 0,
-            "error": None
-        })
-    return jsonify(progress)
+        db.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 if __name__ == '__main__':

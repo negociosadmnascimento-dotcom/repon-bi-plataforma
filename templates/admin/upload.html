@@ -2,6 +2,11 @@
 
 {% block title %}Upload de Dados - LPL{% endblock %}
 
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="dashboard-header">
     <div class="header-title">
@@ -272,6 +277,26 @@
         }
     }
 
+    // Helper para extrair e tratar valores de colunas (case-insensitive)
+    function val(row, colName, defaultValue = null, isNum = false) {
+        const key = Object.keys(row).find(k => k.trim().toUpperCase() === colName.trim().toUpperCase());
+        if (!key) return defaultValue;
+        const valRaw = row[key];
+        if (valRaw === undefined || valRaw === null || valRaw === '') return defaultValue;
+        
+        if (isNum) {
+            let valStr = String(valRaw).replace("R$", "").replace(/\s/g, "").trim();
+            if (valStr.includes(",") && valStr.includes(".")) {
+                valStr = valStr.replace(/\./g, "").replace(",", ".");
+            } else if (valStr.includes(",")) {
+                valStr = valStr.replace(",", ".");
+            }
+            const parsed = parseFloat(valStr);
+            return isNaN(parsed) ? defaultValue : parsed;
+        }
+        return String(valRaw).trim();
+    }
+
     // Gerenciador do Envio Assíncrono com Barra de Progresso Real Time
     document.getElementById("upload-form").addEventListener("submit", async function(e) {
         e.preventDefault();
@@ -279,7 +304,6 @@
         const form = e.target;
         const fileInput = document.getElementById("file-input");
         const file = fileInput.files[0];
-        
         if (!file) return;
         
         const client_id = form.querySelector('[name="client_id"]').value;
@@ -292,147 +316,211 @@
         const progressPercent = document.getElementById("progress-percent");
         const progressStats = document.getElementById("progress-stats");
         
-        // Bloquear botão de envio e mostrar progresso
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processando...';
         progressContainer.style.display = "block";
         
-        // Reset progress bar visual states
         progressBar.style.backgroundColor = "var(--primary)";
         progressBar.style.width = "0%";
         progressPercent.innerText = "0%";
-        progressStatus.innerText = "Preparando upload...";
-        progressStats.innerText = "Enviando arquivo em partes...";
-        
-        const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5MB por pedaço (bem abaixo de 4.5MB da Vercel)
-        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-        const uploadId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
-        
-        let uploadedFilename = "";
+        progressStatus.innerText = "Lendo arquivo...";
+        progressStats.innerText = "Analisando estrutura dos dados...";
         
         try {
-            for (let i = 0; i < totalChunks; i++) {
-                const start = i * CHUNK_SIZE;
-                const end = Math.min(file.size, start + CHUNK_SIZE);
-                const chunk = file.slice(start, end);
+            // 1. Ler e analisar arquivo no navegador usando PapaParse ou SheetJS
+            const parsedRows = await new Promise((resolve, reject) => {
+                const ext = file.name.toLowerCase().split('.').pop();
                 
-                const chunkFormData = new FormData();
-                chunkFormData.append('upload_id', uploadId);
-                chunkFormData.append('chunk_index', i);
-                chunkFormData.append('total_chunks', totalChunks);
-                chunkFormData.append('filename', file.name);
-                chunkFormData.append('file', chunk);
-                
-                const uploadPercent = Math.round((i / totalChunks) * 50); // Primeira metade do progresso (0-50%) é o upload físico
-                progressBar.style.width = uploadPercent + "%";
-                progressPercent.innerText = uploadPercent + "%";
-                progressStatus.innerText = `Enviando arquivo (${i+1}/${totalChunks})...`;
-                progressStats.innerText = `Parte ${i+1} de ${totalChunks} enviada...`;
-                
-                const response = await fetch("/admin/upload/chunk", {
-                    method: "POST",
-                    body: chunkFormData
-                });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Falha no envio da parte ${i+1}: ${errorText || response.statusText}`);
+                if (ext === 'csv') {
+                    // PapaParse para leitura extremamente rápida de CSVs gigantes
+                    Papa.parse(file, {
+                        header: true,
+                        skipEmptyLines: true,
+                        encoding: "ISO-8859-1", // Suporte a caracteres acentuados comuns em CSVs de faturamento PT-BR
+                        complete: function(results) {
+                            resolve(results.data);
+                        },
+                        error: function(err) {
+                            reject(new Error("Erro ao ler CSV: " + err.message));
+                        }
+                    });
+                } else {
+                    // SheetJS para leitura de arquivos Excel (XLSX, XLS)
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, {type: 'array'});
+                            const sheetName = workbook.SheetNames[0];
+                            const sheet = workbook.Sheets[sheetName];
+                            const json = XLSX.utils.sheet_to_json(sheet, {defval: ""});
+                            resolve(json);
+                        } catch (err) {
+                            reject(err);
+                        }
+                    };
+                    reader.onerror = function() {
+                        reject(new Error("Falha ao ler arquivo de planilha."));
+                    };
+                    reader.readAsArrayBuffer(file);
                 }
-                
-                const resData = await response.json();
-                if (!resData.success) {
-                    throw new Error(resData.error || `Erro na parte ${i+1}`);
-                }
-                
-                if (resData.completed) {
-                    uploadedFilename = resData.filename;
-                }
-            }
-            
-            // Depois que o arquivo foi inteiramente carregado em partes e remontado no servidor:
-            progressBar.style.width = "50%";
-            progressPercent.innerText = "50%";
-            progressStatus.innerText = "Iniciando processamento no servidor...";
-            progressStats.innerText = "Arquivo transferido com sucesso. Iniciando processamento...";
-            
-            const processFormData = new FormData();
-            processFormData.append('client_id', client_id);
-            processFormData.append('data_type', data_type);
-            processFormData.append('uploaded_filename', uploadedFilename);
-            
-            const response = await fetch("{{ url_for('admin_upload_process') }}", {
-                method: "POST",
-                body: processFormData
             });
             
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Erro ao iniciar processamento: ${errorText || response.statusText}`);
+            if (!parsedRows || parsedRows.length === 0) {
+                throw new Error("O arquivo está vazio ou não possui registros válidos.");
             }
             
-            const data = await response.json();
-            if (!data.success) {
-                throw new Error(data.error || "Erro ao iniciar importação.");
+            const totalRows = parsedRows.length;
+            progressBar.style.width = "10%";
+            progressPercent.innerText = "10%";
+            progressStatus.innerText = "Validando cabeçalho...";
+            progressStats.innerText = `Arquivo carregado com ${totalRows.toLocaleString('pt-BR')} linhas.`;
+            
+            // 2. Validar colunas obrigatórias no navegador (poupa requisições de arquivos inválidos)
+            const headers = Object.keys(parsedRows[0]).map(h => h.trim().toUpperCase());
+            const requiredCols = ["INDUSTRIA", "DATA", "CNPJ", "RAZAO SOCIAL", "UF", "VALOR FAT.", "UNID. FATURADA", "DISTRIBUIDOR"];
+            const missingCols = requiredCols.filter(c => !headers.includes(c));
+            if (missingCols.length > 0) {
+                throw new Error(`Colunas obrigatórias ausentes no arquivo: ${missingCols.join(', ')}`);
             }
             
-            const serverUploadId = data.upload_id;
+            // 3. Iniciar transação: Limpar base anterior
+            progressBar.style.width = "20%";
+            progressPercent.innerText = "20%";
+            progressStatus.innerText = "Limpando registros anteriores...";
+            progressStats.innerText = "Preparando banco de dados...";
             
-            // 2. Poll progress status at intervals
-            const interval = setInterval(() => {
-                fetch(`/admin/upload/status/${serverUploadId}`)
-                .then(res => res.json())
-                .then(progressData => {
-                    const percent = progressData.progress || 0;
-                    const status = progressData.status || "Processando...";
-                    const current = progressData.current_row || 0;
-                    const total = progressData.total_rows || 0;
-                    
-                    // Segunda metade do progresso (50% a 100%)
-                    const displayPercent = 50 + Math.round(percent / 2);
-                    
-                    progressBar.style.width = displayPercent + "%";
-                    progressPercent.innerText = displayPercent + "%";
-                    progressStatus.innerText = status;
-                    
-                    if (total > 0) {
-                        progressStats.innerText = `Processado: ${current.toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')} linhas.`;
-                    } else {
-                        progressStats.innerText = "Lendo registros...";
-                    }
-                    
-                    if (status === "Concluído" || percent >= 100) {
-                        clearInterval(interval);
-                        progressBar.style.width = "100%";
-                        progressPercent.innerText = "100%";
-                        progressBar.style.backgroundColor = "var(--success)";
-                        progressBar.style.boxShadow = "0 0 10px var(--success)";
-                        progressStatus.innerHTML = '<i class="fa-solid fa-circle-check" style="color: var(--success);"></i> Importação Concluída com sucesso!';
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Iniciar Processamento dos Dados';
-                        
-                        setTimeout(() => {
-                            alert(`Sucesso! ${current.toLocaleString('pt-BR')} linhas foram importadas.`);
-                            window.location.reload();
-                        }, 500);
-                    } else if (status === "Erro" || progressData.error) {
-                        clearInterval(interval);
-                        progressBar.style.backgroundColor = "var(--danger)";
-                        progressBar.style.boxShadow = "0 0 10px var(--danger)";
-                        progressStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Erro ao Processar Arquivo';
-                        progressStats.innerText = "Erro: " + (progressData.error || "Erro inesperado.");
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Iniciar Processamento dos Dados';
-                    }
-                })
-                .catch(err => {
-                    console.error("Erro ao ler progresso:", err);
+            const startFormData = new FormData();
+            startFormData.append('client_id', client_id);
+            startFormData.append('data_type', data_type);
+            
+            const startRes = await fetch("/admin/upload/start", {
+                method: "POST",
+                body: startFormData
+            });
+            
+            if (!startRes.ok) {
+                const errText = await startRes.text();
+                throw new Error("Falha ao limpar banco de dados: " + (errText || startRes.statusText));
+            }
+            
+            const startData = await startRes.json();
+            if (!startData.success) {
+                throw new Error(startData.error || "Erro ao preparar banco de dados.");
+            }
+            
+            // 4. Enviar os dados formatados em lotes (Batches) de 3000 linhas
+            const BATCH_SIZE = 3000;
+            let currentOffset = 0;
+            
+            progressBar.style.width = "30%";
+            progressPercent.innerText = "30%";
+            progressStatus.innerText = "Importando registros...";
+            
+            while (currentOffset < totalRows) {
+                const chunkRows = parsedRows.slice(currentOffset, currentOffset + BATCH_SIZE);
+                
+                // Formatar cada linha de acordo com o modelo de banco de dados
+                const formattedBatch = chunkRows.map(row => {
+                    const anoVal = val(row, "ANO", null, true);
+                    return {
+                        client_id: parseInt(client_id),
+                        industria: val(row, "INDUSTRIA"),
+                        data: val(row, "DATA"),
+                        cnpj: val(row, "CNPJ"),
+                        razao_social: val(row, "RAZAO SOCIAL"),
+                        id_supervisor: val(row, "ID SUPERVISOR"),
+                        supervisor: val(row, "SUPERVISOR"),
+                        id_vendedor: val(row, "ID VENDEDOR"),
+                        vendedor: val(row, "VENDEDOR"),
+                        uf: val(row, "UF"),
+                        ean: val(row, "EAN"),
+                        material_desc: val(row, "MATERIAL/DESC"),
+                        unid_faturada: val(row, "UNID. FATURADA", 0.0, true),
+                        valor_fat: val(row, "VALOR FAT.", 0.0, true),
+                        distribuidor: val(row, "DISTRIBUIDOR"),
+                        ano: anoVal ? parseInt(anoVal) : null,
+                        rede: val(row, "REDE"),
+                        cliente: val(row, "CLIENTE"),
+                        status_ol: val(row, "STATUS OL"),
+                        status_manual: val(row, "STATUS MANUAL"),
+                        valor_ol: val(row, "VALOR OL", 0.0, true),
+                        share_percent: val(row, "SHARE %", 0.0, true),
+                        mes: val(row, "MES")
+                    };
                 });
-            }, 1000);
+                
+                // Enviar lote para gravação no banco
+                const batchRes = await fetch("/admin/upload/batch", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        client_id: client_id,
+                        data_type: data_type,
+                        rows: formattedBatch
+                    })
+                });
+                
+                if (!batchRes.ok) {
+                    const errText = await batchRes.text();
+                    throw new Error("Erro no lote de gravação: " + (errText || batchRes.statusText));
+                }
+                
+                const batchData = await batchRes.json();
+                if (!batchData.success) {
+                    throw new Error(batchData.error || "Erro ao gravar lote no banco.");
+                }
+                
+                currentOffset += chunkRows.length;
+                
+                // Atualizar progresso visual (escala de 30% a 90%)
+                const progressVal = 30 + Math.round((currentOffset / totalRows) * 60);
+                progressBar.style.width = progressVal + "%";
+                progressPercent.innerText = progressVal + "%";
+                progressStats.innerText = `Gravado: ${currentOffset.toLocaleString('pt-BR')} de ${totalRows.toLocaleString('pt-BR')} linhas.`;
+            }
+            
+            // 5. Finalizar importação e registrar no histórico
+            progressBar.style.width = "95%";
+            progressPercent.innerText = "95%";
+            progressStatus.innerText = "Finalizando importação...";
+            progressStats.innerText = "Gravando histórico no sistema...";
+            
+            const finalizeFormData = new FormData();
+            finalizeFormData.append('client_id', client_id);
+            finalizeFormData.append('data_type', data_type);
+            finalizeFormData.append('filename', file.name);
+            finalizeFormData.append('total_rows', totalRows);
+            
+            const finalizeRes = await fetch("/admin/upload/finalize", {
+                method: "POST",
+                body: finalizeFormData
+            });
+            
+            if (!finalizeRes.ok) {
+                const errText = await finalizeRes.text();
+                throw new Error("Falha ao registrar histórico: " + (errText || finalizeRes.statusText));
+            }
+            
+            progressBar.style.width = "100%";
+            progressPercent.innerText = "100%";
+            progressBar.style.backgroundColor = "var(--success)";
+            progressBar.style.boxShadow = "0 0 10px var(--success)";
+            progressStatus.innerHTML = '<i class="fa-solid fa-circle-check" style="color: var(--success);"></i> Importação concluída!';
+            
+            setTimeout(() => {
+                alert(`Sucesso! ${totalRows.toLocaleString('pt-BR')} linhas foram importadas com êxito.`);
+                window.location.reload();
+            }, 500);
             
         } catch (err) {
+            console.error(err);
             progressStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i> Falha no Upload';
             progressStats.innerText = err.message || "Erro desconhecido.";
             progressBar.style.backgroundColor = "var(--danger)";
+            progressBar.style.boxShadow = "0 0 10px var(--danger)";
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Iniciar Processamento dos Dados';
         }

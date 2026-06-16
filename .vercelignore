@@ -1,0 +1,33 @@
+# Ignore local SQLite database (production uses Supabase PostgreSQL)
+database.db
+*.db
+*.sqlite
+
+# Ignore local upload files
+uploads/
+*.xlsx
+*.csv
+
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Ignore virtual envs and dev tools
+.venv/
+venv/
+env/
+ENV/
+
+# Ignore log files and temp env
+vercel_error_logs.json
+vercel_logs_latest.txt
+.env.local
+.env.prod.local
+.env.production
+
+# Ignore scratch scripts
+check_routes.py
+find_db_url.py
+set_vercel_env.py
+db_url_value.txt
