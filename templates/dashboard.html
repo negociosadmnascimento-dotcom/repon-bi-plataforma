@@ -947,9 +947,17 @@
         const select = document.getElementById(id);
         if (!select) return;
         let html = `<option value="${defaultLabel}">${defaultLabel}</option>`;
-        list.forEach(item => {
+        
+        const limit = 400;
+        const itemsToRender = (list && list.length > limit) ? list.slice(0, limit) : (list || []);
+        
+        itemsToRender.forEach(item => {
             html += `<option value="${item}">${item}</option>`;
         });
+        
+        if (list && list.length > limit) {
+            html += `<option value="" disabled>... e mais ${list.length - limit} itens (use a busca/tabela) ...</option>`;
+        }
         select.innerHTML = html;
     }
 
@@ -1751,11 +1759,7 @@
         });
         
         searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase();
-            optionsContainer.querySelectorAll('.cb-filter-option').forEach(el => {
-                const labelText = el.textContent.toLowerCase();
-                el.style.display = labelText.includes(query) ? 'flex' : 'none';
-            });
+            renderOptions();
         });
         
         badge.addEventListener('click', (e) => {
@@ -1773,7 +1777,16 @@
                 return;
             }
             
-            optionsList.forEach(opt => {
+            const query = searchInput.value.toLowerCase().trim();
+            let filteredList = optionsList;
+            if (query) {
+                filteredList = optionsList.filter(opt => String(opt).toLowerCase().includes(query));
+            }
+            
+            const limit = 200;
+            const itemsToRender = filteredList.slice(0, limit);
+            
+            itemsToRender.forEach(opt => {
                 const isSelected = selectedValues.includes(opt);
                 const el = document.createElement('div');
                 el.className = `cb-filter-option ${isSelected ? 'cb-filter-option-selected' : ''}`;
@@ -1803,6 +1816,13 @@
                 
                 optionsContainer.appendChild(el);
             });
+            
+            if (filteredList.length > limit) {
+                const moreEl = document.createElement('div');
+                moreEl.style.cssText = 'padding:6px 10px; text-align:center; color:var(--text-muted); font-size:0.7rem; border-top:1px solid rgba(255,255,255,0.03);';
+                moreEl.textContent = `... e mais ${filteredList.length - limit} itens (digite acima para pesquisar) ...`;
+                optionsContainer.appendChild(moreEl);
+            }
         }
         
         function updateUI() {

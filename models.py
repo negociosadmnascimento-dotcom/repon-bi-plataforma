@@ -187,7 +187,9 @@ def get_engine():
     global _engine
     if _engine is None:
         if DATABASE_URL.startswith("sqlite"):
-            os.makedirs(os.path.dirname(DATABASE_URL.replace("sqlite:///", "")), exist_ok=True)
+            db_dir = os.path.dirname(DATABASE_URL.replace("sqlite:///", ""))
+            if db_dir:
+                os.makedirs(db_dir, exist_ok=True)
             _engine = create_engine(
                 DATABASE_URL, 
                 connect_args={"check_same_thread": False, "timeout": 60}
