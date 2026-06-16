@@ -28,6 +28,10 @@ class Client(Base):
     subscription_due_day = Column(Integer, default=5)
     subscription_status = Column(String(20), default="Ativo") # Ativo, Suspenso
     
+    # Cached Filters for Performance
+    cached_filters_sellout = Column(Text, nullable=True)
+    cached_filters_sellin = Column(Text, nullable=True)
+    
     # Relacionamentos
     users = relationship("User", back_populates="client", cascade="all, delete-orphan")
     payments = relationship("SubscriptionPayment", back_populates="client", cascade="all, delete-orphan")
@@ -208,9 +212,16 @@ def init_db():
     try:
         with engine.connect() as conn:
             if engine.name == 'sqlite':
-                for col, col_type in [("upload_uuid", "VARCHAR(100)"), ("progress", "INTEGER DEFAULT 0"), ("total_rows", "INTEGER DEFAULT 0"), ("error_message", "TEXT")]:
+                for tbl, col, col_type in [
+                    ("upload_history", "upload_uuid", "VARCHAR(100)"),
+                    ("upload_history", "progress", "INTEGER DEFAULT 0"),
+                    ("upload_history", "total_rows", "INTEGER DEFAULT 0"),
+                    ("upload_history", "error_message", "TEXT"),
+                    ("clients", "cached_filters_sellout", "TEXT"),
+                    ("clients", "cached_filters_sellin", "TEXT")
+                ]:
                     try:
-                        conn.execute(text(f"ALTER TABLE upload_history ADD COLUMN {col} {col_type};"))
+                        conn.execute(text(f"ALTER TABLE {tbl} ADD COLUMN {col} {col_type};"))
                         conn.commit()
                     except Exception as sqle:
                         pass
@@ -219,9 +230,11 @@ def init_db():
                 conn.execute(text("ALTER TABLE upload_history ADD COLUMN IF NOT EXISTS progress INTEGER DEFAULT 0;"))
                 conn.execute(text("ALTER TABLE upload_history ADD COLUMN IF NOT EXISTS total_rows INTEGER DEFAULT 0;"))
                 conn.execute(text("ALTER TABLE upload_history ADD COLUMN IF NOT EXISTS error_message TEXT;"))
+                conn.execute(text("ALTER TABLE clients ADD COLUMN IF NOT EXISTS cached_filters_sellout TEXT;"))
+                conn.execute(text("ALTER TABLE clients ADD COLUMN IF NOT EXISTS cached_filters_sellin TEXT;"))
                 conn.commit()
     except Exception as e:
-        print("Erro ao rodar migrações de UploadHistory:", e)
+        print("Erro ao rodar migrações de banco de dados:", e)
     
     # Criar sessão
     Session = sessionmaker(bind=engine)

@@ -232,23 +232,52 @@ def api_filters(service):
         return jsonify({"error": "Admin global não possui dados de cliente associados."}), 400
         
     db = get_db()
-    Model = SellOutRow if service == "sell_out" else SellInRow
+    client = db.query(Client).filter_by(id=client_id).first()
     
-    # Obter filtros distintos baseados estritamente no client_id
+    # Tentar retornar filtros cacheados do cliente
+    if client:
+        cached_str = client.cached_filters_sellout if service == "sell_out" else client.cached_filters_sellin
+        if cached_str:
+            try:
+                import json
+                cached_data = json.loads(cached_str)
+                # Verificar se o cache de fato possui produtos antes de retornar
+                if cached_data.get("produtos") and len(cached_data["produtos"]) > 0:
+                    db.close()
+                    return jsonify(cached_data)
+            except Exception as parse_err:
+                print("Erro ao decodificar filtros cacheados:", parse_err)
+
+    # Fallback caso não haja cache ou ele esteja incompleto/vazio
+    Model = SellOutRow if service == "sell_out" else SellInRow
     query = db.query(Model).filter_by(client_id=client_id)
     
+    # Usar query simplificada de entidade única (muito mais rápido do que distinct individual sequencial)
     filters = {
         "industrias": [r[0] for r in query.with_entities(distinct(Model.industria)).all() if r[0]],
         "distribuidores": [r[0] for r in query.with_entities(distinct(Model.distribuidor)).all() if r[0]],
         "supervisores": [r[0] for r in query.with_entities(distinct(Model.supervisor)).all() if r[0]],
         "vendedores": [r[0] for r in query.with_entities(distinct(Model.vendedor)).all() if r[0]],
-        "clientes": [r[0] for r in query.with_entities(distinct(Model.cliente)).all() if r[0]],
+        "clientes": [r[0] for r in query.with_entities(distinct(Model.razao_social)).all() if r[0]], # Corrigido de Model.cliente para Model.razao_social
         "ufs": [r[0] for r in query.with_entities(distinct(Model.uf)).all() if r[0]],
-        "anos": [r[0] for r in query.with_entities(distinct(Model.ano)).all() if r[0]],
+        "anos": [int(r[0]) for r in query.with_entities(distinct(Model.ano)).all() if r[0]],
         "meses": [r[0] for r in query.with_entities(distinct(Model.mes)).all() if r[0]],
         "produtos": [r[0] for r in query.with_entities(distinct(Model.material_desc)).all() if r[0]]
     }
     
+    # Salvar em cache no banco para as próximas requisições não darem timeout
+    if client:
+        try:
+            import json
+            serialized = json.dumps(filters, ensure_ascii=False)
+            if service == "sell_out":
+                client.cached_filters_sellout = serialized
+            else:
+                client.cached_filters_sellin = serialized
+            db.commit()
+        except Exception as cache_save_err:
+            print("Erro ao tentar gravar cache de fallback:", cache_save_err)
+            
     db.close()
     return jsonify(filters)
 
@@ -954,9 +983,11 @@ def admin_upload_finalize():
     data_type = request.form.get('data_type')
     filename = secure_filename(request.form.get('filename'))
     total_rows = int(request.form.get('total_rows', 0))
+    cached_filters = request.form.get('cached_filters')
     
     db = get_db()
     try:
+        # Registrar no histórico de uploads
         history = UploadHistory(
             client_id=client_id,
             filename=filename,
@@ -965,6 +996,16 @@ def admin_upload_finalize():
             status="Concluído"
         )
         db.add(history)
+        
+        # Salvar os filtros compilados no cache do cliente para performance imediata
+        if cached_filters:
+            client = db.query(Client).filter_by(id=client_id).first()
+            if client:
+                if data_type == "Sell Out":
+                    client.cached_filters_sellout = cached_filters
+                else:
+                    client.cached_filters_sellin = cached_filters
+        
         db.commit()
         return jsonify({"success": True})
     except Exception as e:

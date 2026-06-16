@@ -562,7 +562,12 @@
                 <tbody>
                     <!-- Javascript -->
                 </tbody>
- <!-- 5. Decisão Comercial (Comparador de bases) -->
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 5. Decisão Comercial (Comparador de bases) -->
 <div id="tab-decisao_comercial" class="tab-content" style="display: none;">
     <div style="margin-bottom: 1.5rem;" class="glass-panel">
         <h3 style="font-family: 'Outfit', sans-serif; margin-bottom: 0.5rem;"><i class="fa-solid fa-shuffle"></i> Comparador Comercial de Bases</h3>
@@ -768,7 +773,8 @@
         clients: [],
         products: [],
         supervisors: [],
-        vendedores: []
+        vendedores: [],
+        distributors: []
     };
 
     // --- CONTROLE DE DROPDOWN DE EXPORTAÇÃO ---
@@ -971,6 +977,7 @@
             globalDataTables.products = data.tables.products || [];
             globalDataTables.supervisors = data.tables.supervisors || [];
             globalDataTables.vendedores = data.tables.vendedores || [];
+            globalDataTables.distributors = data.tables.distributors || [];
 
             // 1. Atualizar KPIs da aba Visão Geral
             document.getElementById("kpi-faturamento").innerText = data.kpis.faturamento;
@@ -1105,7 +1112,7 @@
                     <td style="color: var(--text-secondary);">${p.industria}</td>
                     <td style="font-weight: 600;">${p.faturamento}</td>
                     <td>${p.unidades.toLocaleString('pt-BR')}</td>
-                    <td>${(p.unidades/p.cnpjs).toFixed(1)}</td>
+                    <td>${p.cnpjs > 0 ? (p.unidades/p.cnpjs).toFixed(1) : 0}</td>
                     <td>${p.cnpjs}</td>
                     <td>${p.ticket_medio}</td>
                     <td>${p.share}</td>
@@ -1650,7 +1657,12 @@
                 labels: chartData.distrib_labels,
                 datasets: [{
                     label: 'CNPJs Positivados',
-                    data: chartData.distrib_values.map(v => Math.round(v / 1000)),
+                    data: chartData.distrib_values.map((v, i) => {
+                        // Procurar o distribuidor correspondente na tabela globalDataTables.distributors para obter o número real de cnpjs positivados
+                        const distName = chartData.distrib_labels[i];
+                        const distObj = globalDataTables.distributors ? globalDataTables.distributors.find(d => d.distribuidor === distName) : null;
+                        return distObj ? distObj.cnpjs : Math.round(v / 1000);
+                    }),
                     backgroundColor: gradP,
                     borderColor: '#f97316',
                     borderWidth: 1.5,

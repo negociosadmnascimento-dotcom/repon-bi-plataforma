@@ -411,12 +411,26 @@
             progressStatus.innerText = "Validando cabeçalho...";
             progressStats.innerText = `Arquivo carregado com ${totalRows.toLocaleString('pt-BR')} linhas.`;
             
-            // 2. Validar colunas obrigatórias no navegador (poupa requisições de arquivos inválidos)
-            const headers = Object.keys(parsedRows[0]).map(h => h.trim().toUpperCase());
-            const requiredCols = ["INDUSTRIA", "DATA", "CNPJ", "RAZAO SOCIAL", "UF", "VALOR FAT.", "UNID. FATURADA", "DISTRIBUIDOR"];
-            const missingCols = requiredCols.filter(c => !headers.includes(c));
+            // 2. Validar colunas obrigatórias no navegador com a mesma tolerância da função val()
+            const sampleRow = parsedRows[0];
+            const requiredCols = [
+                { name: "INDUSTRIA", label: "Indústria" },
+                { name: "DATA", label: "Data" },
+                { name: "CNPJ", label: "CNPJ" },
+                { name: "RAZAO SOCIAL", label: "Razão Social" },
+                { name: "UF", label: "UF" },
+                { name: "VALOR FAT.", label: "Valor Fat." },
+                { name: "UNID. FATURADA", label: "Unid. Faturada" },
+                { name: "DISTRIBUIDOR", label: "Distribuidor" }
+            ];
+            const missingCols = [];
+            for (const col of requiredCols) {
+                if (val(sampleRow, col.name) === null) {
+                    missingCols.push(col.label);
+                }
+            }
             if (missingCols.length > 0) {
-                throw new Error(`Colunas obrigatórias ausentes no arquivo: ${missingCols.join(', ')}`);
+                throw new Error(`Colunas obrigatórias ausentes ou não identificadas no arquivo: ${missingCols.join(', ')}`);
             }
             
             // 3. Iniciar transação: Limpar base anterior
@@ -452,28 +466,58 @@
             progressPercent.innerText = "30%";
             progressStatus.innerText = "Importando registros...";
             
+            // Sets para coletar os filtros distintos em tempo real e em memória (super rápido no client-side)
+            const cache_industrias = new Set();
+            const cache_distribuidores = new Set();
+            const cache_supervisores = new Set();
+            const cache_vendedores = new Set();
+            const cache_clientes = new Set();
+            const cache_ufs = new Set();
+            const cache_anos = new Set();
+            const cache_meses = new Set();
+            const cache_produtos = new Set();
+            
             while (currentOffset < totalRows) {
                 const chunkRows = parsedRows.slice(currentOffset, currentOffset + BATCH_SIZE);
                 
                 // Formatar cada linha de acordo com o modelo de banco de dados
                 const formattedBatch = chunkRows.map(row => {
                     const anoVal = val(row, "ANO", null, true);
+                    const ind = val(row, "INDUSTRIA");
+                    const dist = val(row, "DISTRIBUIDOR");
+                    const sup = val(row, "SUPERVISOR");
+                    const vend = val(row, "VENDEDOR");
+                    const cli = val(row, "RAZAO SOCIAL");
+                    const uf = val(row, "UF");
+                    const mes = val(row, "MES");
+                    const prod = val(row, "MATERIAL/DESC");
+                    
+                    if (ind) cache_industrias.add(ind);
+                    if (dist) cache_distribuidores.add(dist);
+                    if (sup) cache_supervisores.add(sup);
+                    if (vend) cache_vendedores.add(vend);
+                    if (cli) cache_clientes.add(cli);
+                    if (uf) cache_ufs.add(uf);
+                    if (anoVal) cache_anos.add(parseInt(anoVal));
+                    if (mes) cache_meses.add(mes);
+                    if (prod) cache_produtos.add(prod);
+                    
                     return {
                         client_id: parseInt(client_id),
-                        industria: val(row, "INDUSTRIA"),
+                        industria: ind,
                         data: val(row, "DATA"),
                         cnpj: val(row, "CNPJ"),
-                        razao_social: val(row, "RAZAO SOCIAL"),
+                        razao_social: cli,
                         id_supervisor: val(row, "ID SUPERVISOR"),
-                        supervisor: val(row, "SUPERVISOR"),
+                        supervisor: sup,
                         id_vendedor: val(row, "ID VENDEDOR"),
-                        vendedor: val(row, "VENDEDOR"),
-                        uf: val(row, "UF"),
+                        vendedor: vend,
+                        uf: uf,
                         ean: val(row, "EAN"),
-                        material_desc: val(row, "MATERIAL/DESC"),
+                        material_desc: prod,
                         unid_faturada: val(row, "UNID. FATURADA", 0.0, true),
                         valor_fat: val(row, "VALOR FAT.", 0.0, true),
-                        distribuidor: val(row, "DISTRIBUIDOR"),
+                        distribuidor: dist,
                         ano: anoVal ? parseInt(anoVal) : null,
                         rede: val(row, "REDE"),
                         cliente: val(row, "CLIENTE"),
@@ -481,7 +525,7 @@
                         status_manual: val(row, "STATUS MANUAL"),
                         valor_ol: val(row, "VALOR OL", 0.0, true),
                         share_percent: val(row, "SHARE %", 0.0, true),
-                        mes: val(row, "MES")
+                        mes: mes
                     };
                 });
                 
@@ -521,13 +565,26 @@
             progressBar.style.width = "95%";
             progressPercent.innerText = "95%";
             progressStatus.innerText = "Finalizando importação...";
-            progressStats.innerText = "Gravando histórico no sistema...";
+            progressStats.innerText = "Gravando histórico no sistema e atualizando cache de filtros...";
+            
+            const cache_payload = {
+                industrias: Array.from(cache_industrias).sort(),
+                distribuidores: Array.from(cache_distribuidores).sort(),
+                supervisores: Array.from(cache_supervisores).sort(),
+                vendedores: Array.from(cache_vendedores).sort(),
+                clientes: Array.from(cache_clientes).sort(),
+                ufs: Array.from(cache_ufs).sort(),
+                anos: Array.from(cache_anos).sort((a,b) => a - b),
+                meses: Array.from(cache_meses).sort(),
+                produtos: Array.from(cache_produtos).sort()
+            };
             
             const finalizeFormData = new FormData();
             finalizeFormData.append('client_id', client_id);
             finalizeFormData.append('data_type', data_type);
             finalizeFormData.append('filename', file.name);
             finalizeFormData.append('total_rows', totalRows);
+            finalizeFormData.append('cached_filters', JSON.stringify(cache_payload));
             
             const finalizeRes = await fetch("/admin/upload/finalize", {
                 method: "POST",
