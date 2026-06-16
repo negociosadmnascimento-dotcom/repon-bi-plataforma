@@ -883,7 +883,6 @@
         if (type === 'vendedores') renderVendedoresTable(list);
     }
 
-    // Gerenciador das sub-abas
     function switchSubTab(tabName) {
         document.querySelectorAll('.sub-tab').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
@@ -901,6 +900,11 @@
         } else {
             filtersContainer.style.display = 'grid';
         }
+        
+        // Disparar redimensionamento para ajustar o tamanho dos gráficos do Chart.js que estavam ocultos
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 50);
     }
 
     // Remover todos os filtros ativos

@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory, g
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func, distinct, or_
+from sqlalchemy import func, distinct, or_, case
 from models import get_engine, User, Client, SellOutRow, SellInRow, SubscriptionPayment, UploadHistory, init_db
 from data_parser import parse_excel_and_import
 
@@ -597,7 +597,10 @@ def api_cruzamento(service):
     # 1. Base Padrão: CNPJ, Razão Social, faturamento, unidades e mix
     base_q = db.query(
         Model.cnpj.label('cnpj'),
-        func.max(Model.razao_social).label('cliente'),
+        func.max(case(
+            (Model.razao_social.like('%INFORMA%'), None),
+            else_=Model.razao_social
+        )).label('cliente'),
         func.sum(Model.valor_fat).label('base_val'),
         func.sum(Model.unid_faturada).label('base_unid'),
         func.count(distinct(Model.ean)).label('base_mix')
