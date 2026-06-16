@@ -22,7 +22,7 @@
         <!-- Mobile Header (Visible only on small screens) -->
         <div class="mobile-header">
             <div class="logo-section-mobile">
-                <img src="{{ theme.logo|default('/static/uploads/repon_logo.jpg') }}" alt="Logo Cliente" onerror="this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
+                <img src="{{ theme.logo|default('/static/uploads/repon_logo.jpg') }}" alt="Logo Cliente" onerror="this.onerror=null; this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
             </div>
             <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()">
                 <i class="fa-solid fa-bars"></i>
@@ -35,7 +35,7 @@
                 <i class="fa-solid fa-chevron-left" id="toggleIcon"></i>
             </button>
             <div class="logo-section">
-                <img src="{{ theme.logo|default('/static/uploads/repon_logo.jpg') }}" alt="Logo Cliente" onerror="this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
+                <img src="{{ theme.logo|default('/static/uploads/repon_logo.jpg') }}" alt="Logo Cliente" onerror="this.onerror=null; this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
                 <div class="brand-info">
                     <h2>{{ theme.client_name|default('RepOn') }}</h2>
                     <p>INTELIGÊNCIA COMERCIAL</p>
