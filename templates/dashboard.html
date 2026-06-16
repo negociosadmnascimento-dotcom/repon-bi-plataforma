@@ -1660,7 +1660,7 @@
                     data: chartData.distrib_values.map((v, i) => {
                         // Procurar o distribuidor correspondente na tabela globalDataTables.distributors para obter o número real de cnpjs positivados
                         const distName = chartData.distrib_labels[i];
-                        const distObj = globalDataTables.distributors ? globalDataTables.distributors.find(d => d.distribuidor === distName) : null;
+                        const distObj = (globalDataTables.distributors && Array.isArray(globalDataTables.distributors)) ? globalDataTables.distributors.find(d => d.distribuidor === distName) : null;
                         return distObj ? distObj.cnpjs : Math.round(v / 1000);
                     }),
                     backgroundColor: gradP,
