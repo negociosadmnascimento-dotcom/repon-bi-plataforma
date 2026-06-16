@@ -895,87 +895,82 @@ def admin_upload_process():
                 session.rollback()
                 raise dberr
                 
-            # 3. Iterar e salvar em lotes
+            # 3. Iterar e salvar em lotes com bulk_insert_mappings para alta performance e baixo consumo de memória
             UPLOAD_PROGRESS[uid]["status"] = "Importando registros para o Banco..."
-            rows_to_insert = []
             count = 0
+            batch_size = 5000
             
-            for idx, row in df.iterrows():
-                def val(col_name, default=None, is_num=False):
-                    if col_name not in df.columns:
-                        return default
-                    val_raw = row[col_name]
-                    if pd.isna(val_raw):
-                        return default
-                    if is_num:
-                        try:
-                            # Tratar string numérica com formato brasileiro (ex: 1.250,45 ou R$ 10,00)
-                            val_str = str(val_raw).replace("R$", "").replace(" ", "").strip()
-                            if "," in val_str and "." in val_str:
-                                val_str = val_str.replace(".", "").replace(",", ".")
-                            elif "," in val_str:
-                                val_str = val_str.replace(",", ".")
-                            return float(val_str)
-                        except ValueError:
+            for start_idx in range(0, total, batch_size):
+                end_idx = min(start_idx + batch_size, total)
+                df_batch = df.iloc[start_idx:end_idx]
+                batch_rows = []
+                
+                for idx, row in df_batch.iterrows():
+                    def val(col_name, default=None, is_num=False):
+                        if col_name not in df.columns:
                             return default
-                    return str(val_raw).strip()
-                
-                val_fat = val("VALOR FAT.", 0.0, is_num=True)
-                unid_fat = val("UNID. FATURADA", 0.0, is_num=True)
-                share = val("SHARE %", 0.0, is_num=True)
-                val_ol = val("VALOR OL", 0.0, is_num=True)
-                ano_val = val("ANO", None, is_num=True)
-                if ano_val is not None:
-                    ano_val = int(ano_val)
-                
-                row_data = {
-                    "client_id": cid,
-                    "industria": val("INDUSTRIA"),
-                    "data": val("DATA"),
-                    "cnpj": val("CNPJ"),
-                    "razao_social": val("RAZAO SOCIAL"),
-                    "id_supervisor": val("ID SUPERVISOR"),
-                    "supervisor": val("SUPERVISOR"),
-                    "id_vendedor": val("ID VENDEDOR"),
-                    "vendedor": val("VENDEDOR"),
-                    "uf": val("UF"),
-                    "ean": val("EAN"),
-                    "material_desc": val("MATERIAL/DESC"),
-                    "unid_faturada": unid_fat,
-                    "valor_fat": val_fat,
-                    "distribuidor": val("DISTRIBUIDOR"),
-                    "ano": ano_val,
-                    "rede": val("REDE"),
-                    "cliente": val("CLIENTE"),
-                    "status_ol": val("STATUS OL"),
-                    "status_manual": val("STATUS MANUAL"),
-                    "valor_ol": val_ol,
-                    "share_percent": share,
-                    "mes": val("MES")
-                }
-                
-                if dtype == "Sell Out":
-                    db_row = SellOutRow(**row_data)
-                else:
-                    db_row = SellInRow(**row_data)
+                        val_raw = row[col_name]
+                        if pd.isna(val_raw):
+                            return default
+                        if is_num:
+                            try:
+                                val_str = str(val_raw).replace("R$", "").replace(" ", "").strip()
+                                if "," in val_str and "." in val_str:
+                                    val_str = val_str.replace(".", "").replace(",", ".")
+                                elif "," in val_str:
+                                    val_str = val_str.replace(",", ".")
+                                return float(val_str)
+                            except ValueError:
+                                return default
+                        return str(val_raw).strip()
                     
-                rows_to_insert.append(db_row)
-                count += 1
+                    val_fat = val("VALOR FAT.", 0.0, is_num=True)
+                    unid_fat = val("UNID. FATURADA", 0.0, is_num=True)
+                    share = val("SHARE %", 0.0, is_num=True)
+                    val_ol = val("VALOR OL", 0.0, is_num=True)
+                    ano_val = val("ANO", None, is_num=True)
+                    if ano_val is not None:
+                        ano_val = int(ano_val)
+                    
+                    row_data = {
+                        "client_id": cid,
+                        "industria": val("INDUSTRIA"),
+                        "data": val("DATA"),
+                        "cnpj": val("CNPJ"),
+                        "razao_social": val("RAZAO SOCIAL"),
+                        "id_supervisor": val("ID SUPERVISOR"),
+                        "supervisor": val("SUPERVISOR"),
+                        "id_vendedor": val("ID VENDEDOR"),
+                        "vendedor": val("VENDEDOR"),
+                        "uf": val("UF"),
+                        "ean": val("EAN"),
+                        "material_desc": val("MATERIAL/DESC"),
+                        "unid_faturada": unid_fat,
+                        "valor_fat": val_fat,
+                        "distribuidor": val("DISTRIBUIDOR"),
+                        "ano": ano_val,
+                        "rede": val("REDE"),
+                        "cliente": val("CLIENTE"),
+                        "status_ol": val("STATUS OL"),
+                        "status_manual": val("STATUS MANUAL"),
+                        "valor_ol": val_ol,
+                        "share_percent": share,
+                        "mes": val("MES")
+                    }
+                    batch_rows.append(row_data)
                 
-                # Batch commits de 1000 em 1000
-                if len(rows_to_insert) >= 1000:
-                    session.bulk_save_objects(rows_to_insert)
+                if batch_rows:
+                    if dtype == "Sell Out":
+                        session.bulk_insert_mappings(SellOutRow, batch_rows)
+                    else:
+                        session.bulk_insert_mappings(SellInRow, batch_rows)
                     session.commit()
-                    rows_to_insert = []
-                    
-                    # Atualizar progresso dinâmico (escala entre 30% e 95%)
-                    current_prog = 30 + int((count / total) * 65)
-                    UPLOAD_PROGRESS[uid]["progress"] = current_prog
-                    UPLOAD_PROGRESS[uid]["current_row"] = count
-            
-            if rows_to_insert:
-                session.bulk_save_objects(rows_to_insert)
-                session.commit()
+                
+                count = end_idx
+                # Atualizar progresso dinâmico (escala entre 30% e 95%)
+                current_prog = 30 + int((count / total) * 65)
+                UPLOAD_PROGRESS[uid]["progress"] = current_prog
+                UPLOAD_PROGRESS[uid]["current_row"] = count
                 
             # Adicionar histórico de upload concluído
             history = UploadHistory(
