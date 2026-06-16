@@ -1017,7 +1017,7 @@ def admin_upload_process():
                 
     # Iniciar a execução assíncrona do parser
     import pandas as pd # certificar de que pandas esteja disponível na thread
-    threading.Thread(target=run_async_import, args=(upload_id, client_id, filepath, data_type, file.filename)).start()
+    threading.Thread(target=run_async_import, args=(upload_id, client_id, filepath, data_type, original_name)).start()
     
     return jsonify({"success": True, "upload_id": upload_id})
 
