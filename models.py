@@ -16,7 +16,7 @@ class Client(Base):
     status = Column(String(20), default="Ativo") # Ativo, Inativo
     
     # Identidade & Dashboard
-    logo_path = Column(String(255), default="/static/img/default_logo.png")
+    logo_path = Column(String(255), default="/static/uploads/repon_logo.jpg")
     primary_color = Column(String(7), default="#1e1b4b")   # Cores padrão do tema
     secondary_color = Column(String(7), default="#f97316")
     
@@ -171,23 +171,28 @@ if DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql
         
         print(f"DEBUG DB: host={host_part}")
 
+_engine = None
+
 def get_engine():
-    if DATABASE_URL.startswith("sqlite"):
-        os.makedirs(os.path.dirname(DATABASE_URL.replace("sqlite:///", "")), exist_ok=True)
-        return create_engine(
-            DATABASE_URL, 
-            connect_args={"check_same_thread": False, "timeout": 60}
-        )
-    else:
-        from sqlalchemy.pool import NullPool
-        # Configuração ideal para Serverless (Vercel) + Supabase Pooler:
-        # Usar NullPool para não manter conexões ociosas localmente, evitando estourar
-        # o limite de conexões do pooler (ex: EMAXCONNSESSION max_clients=15)
-        return create_engine(
-            DATABASE_URL,
-            poolclass=NullPool,
-            connect_args={"options": "-c statement_timeout=10000"} # Timeout opcional para segurança
-        )
+    global _engine
+    if _engine is None:
+        if DATABASE_URL.startswith("sqlite"):
+            os.makedirs(os.path.dirname(DATABASE_URL.replace("sqlite:///", "")), exist_ok=True)
+            _engine = create_engine(
+                DATABASE_URL, 
+                connect_args={"check_same_thread": False, "timeout": 60}
+            )
+        else:
+            from sqlalchemy.pool import NullPool
+            # Configuração ideal para Serverless (Vercel) + Supabase Pooler:
+            # Usar NullPool para não manter conexões ociosas localmente, evitando estourar
+            # o limite de conexões do pooler (ex: EMAXCONNSESSION max_clients=15)
+            _engine = create_engine(
+                DATABASE_URL,
+                poolclass=NullPool,
+                connect_args={"options": "-c statement_timeout=10000"} # Timeout opcional para segurança
+            )
+    return _engine
 
 def init_db():
     engine = get_engine()

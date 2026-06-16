@@ -5,7 +5,7 @@
 {% block content %}
 <!-- Header do Cliente Gerenciado -->
 <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2.5rem; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 1rem;">
-    <img src="{{ client.logo_path or '/static/img/default_logo.png' }}" alt="Logo" style="height: 60px; width: 60px; border-radius: 50%; object-fit: cover;" onerror="this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
+    <img src="{{ client.logo_path or '/static/uploads/repon_logo.jpg' }}" alt="Logo" style="height: 60px; width: 60px; border-radius: 50%; object-fit: cover;" onerror="this.src='https://lplmult.com.br/wp-content/uploads/2021/04/lpl-mult-logo.png'">
     <div>
         <h1 style="font-family: 'Outfit'; font-size: 1.8rem; font-weight: 800;">{{ client.name }}</h1>
         <p style="font-size: 0.85rem; color: var(--text-muted);">Slug: <code>{{ client.slug }}</code> • Status: <span class="badge badge-success">{{ client.status }}</span></p>

@@ -1,7 +1,7 @@
 import os
 import hashlib
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_from_directory, g
 from werkzeug.utils import secure_filename
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func, distinct, or_
@@ -23,18 +23,25 @@ def initialize_database():
 
 # Pasta de upload compatível com caminhos relativos em ambientes serverless (Vercel)
 if os.environ.get('VERCEL') == '1':
-    UPLOAD_FOLDER = '/tmp/uploads'
+    UPLOAD_FOLDER = "/tmp"
 else:
-    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(app.root_path, 'uploads'))
-
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Helper para obter sessão do banco de dados por requisição
+# Helper para obter sessão do banco de dados por requisição (compartilhada e auto-fechada no final da request)
 def get_db():
-    engine = get_engine()
-    Session = sessionmaker(bind=engine)
-    return Session()
+    if 'db' not in g:
+        engine = get_engine()
+        Session = sessionmaker(bind=engine)
+        g.db = Session()
+    return g.db
+
+@app.teardown_appcontext
+def teardown_db(exception):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
 
 # Injetor de Tema no Contexto das Páginas
 @app.context_processor
@@ -51,13 +58,13 @@ def inject_theme():
             
             if user.is_system_admin:
                 theme_data['enabled_services'] = ["Sell Out", "Sell In", "OL", "Campanhas"]
-                theme_data['logo'] = "/static/img/default_logo.png"
+                theme_data['logo'] = "/static/uploads/repon_logo.jpg"
                 theme_data['primary_color'] = "#6366f1"
                 theme_data['secondary_color'] = "#f97316"
                 theme_data['client_name'] = "Administração LPL"
             elif user.client:
                 theme_data['enabled_services'] = [s.strip() for s in user.client.enabled_services.split(",") if s.strip()]
-                theme_data['logo'] = user.client.logo_path or "/static/img/default_logo.png"
+                theme_data['logo'] = user.client.logo_path or "/static/uploads/repon_logo.jpg"
                 theme_data['primary_color'] = user.client.primary_color or "#6366f1"
                 theme_data['secondary_color'] = user.client.secondary_color or "#f97316"
                 theme_data['client_name'] = user.client.name
@@ -771,6 +778,39 @@ def admin_delete_upload(history_id):
     db.close()
     return redirect(url_for('admin_upload_page'))
 
+@app.route('/admin/upload/chunk', methods=['POST'])
+@admin_required
+def admin_upload_chunk():
+    upload_id = request.form.get('upload_id')
+    chunk_index = int(request.form.get('chunk_index', 0))
+    total_chunks = int(request.form.get('total_chunks', 1))
+    filename = secure_filename(request.form.get('filename', 'file.csv'))
+    chunk_file = request.files.get('file')
+    
+    if not upload_id or chunk_file is None:
+        return jsonify({"success": False, "error": "Parâmetros inválidos."}), 400
+        
+    temp_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'chunks')
+    os.makedirs(temp_dir, exist_ok=True)
+    temp_filepath = os.path.join(temp_dir, f"{upload_id}_{filename}")
+    
+    mode = 'wb' if chunk_index == 0 else 'ab'
+    with open(temp_filepath, mode) as f:
+        f.write(chunk_file.read())
+        
+    if chunk_index == total_chunks - 1:
+        final_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{upload_id}_{filename}")
+        import shutil
+        if os.path.exists(final_filepath):
+            try:
+                os.remove(final_filepath)
+            except:
+                pass
+        shutil.move(temp_filepath, final_filepath)
+        return jsonify({"success": True, "completed": True, "filename": f"{upload_id}_{filename}"})
+        
+    return jsonify({"success": True, "completed": False})
+
 @app.route('/admin/upload/process', methods=['POST'])
 @admin_required
 def admin_upload_process():
@@ -779,14 +819,22 @@ def admin_upload_process():
     
     client_id = int(request.form.get('client_id'))
     data_type = request.form.get('data_type')
-    file = request.files.get('file')
     
-    if not file or not file.filename:
-        return jsonify({"success": False, "error": "Nenhum arquivo enviado."}), 400
-        
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
+    uploaded_filename = request.form.get('uploaded_filename')
+    if uploaded_filename:
+        filename = secure_filename(uploaded_filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if not os.path.exists(filepath):
+            return jsonify({"success": False, "error": "Arquivo não encontrado no servidor."}), 404
+        original_name = filename.split('_', 1)[-1] if '_' in filename else filename
+    else:
+        file = request.files.get('file')
+        if not file or not file.filename:
+            return jsonify({"success": False, "error": "Nenhum arquivo enviado."}), 400
+        original_name = file.filename
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
     
     # Criar ID único para rastrear o progresso do upload
     upload_id = str(uuid.uuid4())
