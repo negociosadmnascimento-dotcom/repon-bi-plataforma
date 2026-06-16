@@ -838,6 +838,25 @@ def admin_upload_process():
     
     # Criar ID único para rastrear o progresso do upload
     upload_id = str(uuid.uuid4())
+    
+    # Gravar o progresso inicial no banco de dados para compartilhamento stateless (serverless-proof)
+    try:
+        db = get_db()
+        history = UploadHistory(
+            client_id=client_id,
+            filename=original_name,
+            data_type=data_type,
+            num_rows=0,
+            status="Processando",
+            upload_uuid=upload_id,
+            progress=0,
+            total_rows=0
+        )
+        db.add(history)
+        db.commit()
+    except Exception as dberr:
+        print("Erro ao criar registro de progresso no banco:", dberr)
+        
     UPLOAD_PROGRESS[upload_id] = {
         "status": "Iniciando",
         "progress": 0,
@@ -848,11 +867,31 @@ def admin_upload_process():
     
     # Executar o processador em uma thread paralela para não travar a requisição HTTP (evitando timeout/locks)
     def run_async_import(uid, cid, path, dtype, orig_name):
+        def update_db_progress(status, progress, current_row=0, total_rows=0, error_msg=None):
+            try:
+                engine = get_engine()
+                Session = sessionmaker(bind=engine)
+                session = Session()
+                history = session.query(UploadHistory).filter_by(upload_uuid=uid).first()
+                if history:
+                    history.status = status
+                    history.progress = progress
+                    history.num_rows = current_row
+                    if total_rows:
+                        history.total_rows = total_rows
+                    if error_msg:
+                        history.error_message = error_msg
+                    session.commit()
+                session.close()
+            except Exception as e:
+                print("Erro ao persistir progresso no banco:", e)
+                
         try:
             # 1. Carregar arquivo e calcular tamanho total
             ext = orig_name.lower().split('.')[-1]
             UPLOAD_PROGRESS[uid]["status"] = "Lendo arquivo..."
             UPLOAD_PROGRESS[uid]["progress"] = 10
+            update_db_progress("Lendo arquivo...", 10)
             
             if ext == 'csv':
                 try:
@@ -866,6 +905,7 @@ def admin_upload_process():
             UPLOAD_PROGRESS[uid]["total_rows"] = total
             UPLOAD_PROGRESS[uid]["status"] = "Validando colunas..."
             UPLOAD_PROGRESS[uid]["progress"] = 20
+            update_db_progress("Validando colunas...", 20, total_rows=total)
             
             # Normalizar colunas
             df.columns = [str(col).strip().upper() for col in df.columns]
@@ -879,6 +919,7 @@ def admin_upload_process():
             # 2. Deletar registros antigos do cliente
             UPLOAD_PROGRESS[uid]["status"] = "Limpando registros anteriores..."
             UPLOAD_PROGRESS[uid]["progress"] = 30
+            update_db_progress("Limpando registros anteriores...", 30, total_rows=total)
             
             # Criar conexão separada para a thread
             engine = get_engine()
@@ -897,6 +938,7 @@ def admin_upload_process():
                 
             # 3. Iterar e salvar em lotes com bulk_insert_mappings para alta performance e baixo consumo de memória
             UPLOAD_PROGRESS[uid]["status"] = "Importando registros para o Banco..."
+            update_db_progress("Importando registros para o Banco...", 30, total_rows=total)
             count = 0
             batch_size = 5000
             
@@ -971,44 +1013,24 @@ def admin_upload_process():
                 current_prog = 30 + int((count / total) * 65)
                 UPLOAD_PROGRESS[uid]["progress"] = current_prog
                 UPLOAD_PROGRESS[uid]["current_row"] = count
+                update_db_progress("Importando registros para o Banco...", current_prog, current_row=count, total_rows=total)
                 
-            # Adicionar histórico de upload concluído
-            history = UploadHistory(
-                client_id=cid,
-                filename=orig_name,
-                data_type=dtype,
-                num_rows=count,
-                status="Concluído"
-            )
-            session.add(history)
-            session.commit()
+            session.close()
+            
+            # Atualizar progresso final de conclusão no banco
+            update_db_progress("Concluído", 100, current_row=count, total_rows=total)
             
             UPLOAD_PROGRESS[uid]["status"] = "Concluído"
             UPLOAD_PROGRESS[uid]["progress"] = 100
             UPLOAD_PROGRESS[uid]["current_row"] = count
-            session.close()
             
         except Exception as err:
+            error_str = str(err)
             UPLOAD_PROGRESS[uid]["status"] = "Erro"
-            UPLOAD_PROGRESS[uid]["error"] = str(err)
+            UPLOAD_PROGRESS[uid]["error"] = error_str
             
-            # Gravar falha no banco de dados
-            try:
-                engine = get_engine()
-                Session = sessionmaker(bind=engine)
-                session = Session()
-                history = UploadHistory(
-                    client_id=cid,
-                    filename=orig_name,
-                    data_type=dtype,
-                    num_rows=0,
-                    status="Erro"
-                )
-                session.add(history)
-                session.commit()
-                session.close()
-            except:
-                pass
+            # Atualizar o registro existente no banco de dados para Erro
+            update_db_progress("Erro", 100, error_msg=error_str)
                 
     # Iniciar a execução assíncrona do parser
     import pandas as pd # certificar de que pandas esteja disponível na thread
@@ -1019,9 +1041,35 @@ def admin_upload_process():
 @app.route('/admin/upload/status/<upload_id>')
 @admin_required
 def admin_upload_status(upload_id):
+    # 1. Tentar ler do banco de dados (stateless/compartilhado)
+    try:
+        db = get_db()
+        history = db.query(UploadHistory).filter_by(upload_uuid=upload_id).first()
+        if history:
+            res = {
+                "status": history.status,
+                "progress": history.progress,
+                "current_row": history.num_rows,
+                "total_rows": history.total_rows,
+                "error": history.error_message
+            }
+            db.close()
+            return jsonify(res)
+        db.close()
+    except Exception as e:
+        print("Erro ao ler progresso do banco de dados:", e)
+        
+    # 2. Fallback para em-memória local
     progress = UPLOAD_PROGRESS.get(upload_id)
     if not progress:
-        return jsonify({"error": "Identificador de upload não encontrado."}), 404
+        # Se não encontrou no banco nem na memória local, retorna Iniciando (evita 404 fatal no frontend)
+        return jsonify({
+            "status": "Iniciando",
+            "progress": 0,
+            "current_row": 0,
+            "total_rows": 0,
+            "error": None
+        })
     return jsonify(progress)
 
 

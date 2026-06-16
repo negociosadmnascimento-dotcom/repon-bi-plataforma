@@ -1,7 +1,7 @@
 import os
 import hashlib
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float, DateTime, ForeignKey, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 
@@ -70,7 +70,13 @@ class UploadHistory(Base):
     data_type = Column(String(20), nullable=False) # "Sell Out" ou "Sell In"
     upload_date = Column(DateTime, default=datetime.utcnow)
     num_rows = Column(Integer, default=0)
-    status = Column(String(20), default="Concluído") # Concluído, Erro
+    status = Column(String(20), default="Concluído") # Concluído, Erro, Processando
+    
+    # Novos campos para progresso serverless
+    upload_uuid = Column(String(100), nullable=True)
+    progress = Column(Integer, default=0)
+    total_rows = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
     
     client = relationship("Client", back_populates="uploads")
 
@@ -197,6 +203,25 @@ def get_engine():
 def init_db():
     engine = get_engine()
     Base.metadata.create_all(engine)
+    
+    # Rodar migrações para adicionar os novos campos se não existirem
+    try:
+        with engine.connect() as conn:
+            if engine.name == 'sqlite':
+                for col, col_type in [("upload_uuid", "VARCHAR(100)"), ("progress", "INTEGER DEFAULT 0"), ("total_rows", "INTEGER DEFAULT 0"), ("error_message", "TEXT")]:
+                    try:
+                        conn.execute(text(f"ALTER TABLE upload_history ADD COLUMN {col} {col_type};"))
+                        conn.commit()
+                    except Exception as sqle:
+                        pass
+            else:
+                conn.execute(text("ALTER TABLE upload_history ADD COLUMN IF NOT EXISTS upload_uuid VARCHAR(100);"))
+                conn.execute(text("ALTER TABLE upload_history ADD COLUMN IF NOT EXISTS progress INTEGER DEFAULT 0;"))
+                conn.execute(text("ALTER TABLE upload_history ADD COLUMN IF NOT EXISTS total_rows INTEGER DEFAULT 0;"))
+                conn.execute(text("ALTER TABLE upload_history ADD COLUMN IF NOT EXISTS error_message TEXT;"))
+                conn.commit()
+    except Exception as e:
+        print("Erro ao rodar migrações de UploadHistory:", e)
     
     # Criar sessão
     Session = sessionmaker(bind=engine)
