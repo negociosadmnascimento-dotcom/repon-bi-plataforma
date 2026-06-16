@@ -946,10 +946,11 @@
     function populateSelect(id, list, defaultLabel) {
         const select = document.getElementById(id);
         if (!select) return;
-        select.innerHTML = `<option value="${defaultLabel}">${defaultLabel}</option>`;
+        let html = `<option value="${defaultLabel}">${defaultLabel}</option>`;
         list.forEach(item => {
-            select.innerHTML += `<option value="${item}">${item}</option>`;
+            html += `<option value="${item}">${item}</option>`;
         });
+        select.innerHTML = html;
     }
 
     function loadDashboardData() {
