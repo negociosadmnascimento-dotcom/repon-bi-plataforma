@@ -10,6 +10,8 @@ database.db
 
 # Environments
 .env
+.env.production
+.env.prod.local
 .venv
 env/
 venv/
@@ -24,6 +26,10 @@ uploads/
 *.xlsx
 *.csv
 !test_sellout.xlsx
+
+# Credentials and utility scripts containing keys
+db_url_value.txt
+set_vercel_env.py
 
 # Allow logo images in static/uploads to be tracked
 !static/uploads/
